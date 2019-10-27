@@ -2,7 +2,6 @@ package ai.quod.challenge.tranfomer;
 
 import ai.quod.challenge.tranfomer.calculator.BaseCalculator;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +14,7 @@ import java.util.stream.Stream;
 public class GithubTransformer implements Transformer<Stream<Map<String,Object>>> {
 
   private ConcurrentHashMap<String,Object> consumeResult = new ConcurrentHashMap<>();
-  private List<BaseCalculator> calculateFunctions = new ArrayList<>();
+  private List<BaseCalculator> calculateFunctions = null;
 
   public GithubTransformer(List<BaseCalculator> calculateFunctions) {
     this.calculateFunctions = calculateFunctions;
@@ -38,6 +37,11 @@ public class GithubTransformer implements Transformer<Stream<Map<String,Object>>
       Function<Map<String, Object>,Map<String, Object>> healthScoreCalculator = (Function<Map<String, Object>,Map<String, Object>>) calculateFunctions.get(i);
       githubEvents = githubEvents.map(healthScoreCalculator);
     }
+    githubEvents = githubEvents.sorted((o1, o2) -> {
+      Double heathScore1 = (Double) o1.get("health_score");
+      Double heathScore2 = (Double) o2.get("health_score");
+      return heathScore2.compareTo(heathScore1);
+    });
     return githubEvents;
   }
 
