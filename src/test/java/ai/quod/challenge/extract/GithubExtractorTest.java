@@ -19,8 +19,8 @@ public class GithubExtractorTest {
   public void testDownloadAndExtract()  {
     Extractor<Map<String,Object>> githubExtractor = new GithubExtractor();
     Map<String,Object> resourceUrl = new HashMap<>();
-    LocalDateTime startTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2019-08-20T08:00:00Z");
-    LocalDateTime endTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2019-08-20T09:00:00Z");
+    LocalDateTime startTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2011-02-12T08:00:00Z");
+    LocalDateTime endTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2011-02-12T08:00:00Z");
     resourceUrl.put("startTime",startTime);
     resourceUrl.put("endTime",endTime);
     Stream<Map<String,Object>> downloadedData = githubExtractor.extractDataFrom(resourceUrl);
@@ -32,8 +32,8 @@ public class GithubExtractorTest {
   @Test
   public void testBuildUrlForEachHour() {
     LocalDateTime startTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2019-08-20T00:00:00Z");
-    LocalDateTime endTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2019-08-25T00:00:00Z");
+    LocalDateTime endTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2019-08-20T08:00:00Z");
     List<String> urls = DateTimeConverter.buildUrlForEachHour("https://data.gharchive.org/",startTime,endTime);
-    urls.forEach(System.out::println);
+    Assertions.assertEquals(9,urls.size());
   }
 }

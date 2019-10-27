@@ -7,8 +7,10 @@ import ai.quod.challenge.tranfomer.calculator.CommitCalculator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,9 +47,11 @@ public class CsvTransporterTest {
     System.out.println("Start Transform : " + new Date());
     Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric));
     data.put("data",git.transform(data));
-    data.put("filename","heath_score");
+    data.put("filename","heath_score.csv");
     data.put("headers",new String[]{"org","repo_name","health_score","num_commits"});
     Transporter csvTransporter = new CsvTransporter();
     csvTransporter.sendTo(data);
+    File file = new File((String) data.get("filename"));
+    Assertions.assertTrue(file.exists());
   }
 }

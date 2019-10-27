@@ -44,23 +44,13 @@ public class GithubTransformerTest {
       return null;
     }).collect(Collectors.toList());
     Map<String,Object> data = new HashMap<>();
-//    Extractor<Map<String,Object>> githubExtractor = new GithubExtractor();
-//    Map<String,Object> resourceUrl = new HashMap<>();
-//    LocalDateTime startTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2019-08-20T08:00:00Z");
-//    LocalDateTime endTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2019-08-27T08:00:00Z");
-//    resourceUrl.put("startTime",startTime);
-//    resourceUrl.put("endTime",endTime);
-//    Stream<Map<String,Object>> downloadedData = githubExtractor.extractDataFrom(resourceUrl);
-    data.put("data",dataJson);
+    data.put("data",dataJson.stream());
     BaseCalculator commitMetric = new CommitCalculator();
     System.out.println("Start Transform : " + new Date());
     Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric));
     List<Map<String,Object>> result =  git.transform(data).collect(Collectors.toList());
     System.out.println("End Transform : " + new Date());
     System.out.println(result.size());
-//    result.forEach(stringObjectMap -> {
-//      System.out.println(stringObjectMap.get("id") + " - " + stringObjectMap.get("org") + " - " + stringObjectMap.get("repo_name") + " - " + stringObjectMap.get("health_score") + " - " + stringObjectMap.get("num_commits"));
-//    });
     Assertions.assertTrue(result.size()>0);
   }
 }
