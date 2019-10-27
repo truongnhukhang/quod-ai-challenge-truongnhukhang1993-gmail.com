@@ -1,4 +1,4 @@
-package ai.quod.challenge.test.extract;
+package ai.quod.challenge.extract;
 
 import ai.quod.challenge.converter.DateTimeConverter;
 import ai.quod.challenge.extractor.Extractor;
@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 public class GithubExtractorTest {
 
   @Test
-  public void testDownloadAndExtract() throws IOException {
+  public void testDownloadAndExtract()  {
     Extractor<Map<String,Object>> githubExtractor = new GithubExtractor();
     Map<String,Object> resourceUrl = new HashMap<>();
     LocalDateTime startTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2019-08-20T08:00:00Z");
