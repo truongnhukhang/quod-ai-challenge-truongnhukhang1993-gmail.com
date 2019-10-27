@@ -35,7 +35,6 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
    * @return
    */
   public Stream<Map<String, Object>> extractDataFrom(Map<String, Object> resourceUrl) {
-    Date startExtractTime = new Date();
     LocalDateTime startTime = (LocalDateTime) resourceUrl.get("startTime");
     LocalDateTime endTime = (LocalDateTime) resourceUrl.get("endTime");
     LOGGER.log(Level.INFO, "Start Extract Data " + startTime + " - " + endTime);
@@ -48,7 +47,7 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
       for (int i = 0; i < futures.size(); i++) {
         result = Stream.concat(result,futures.get(i).get());
       }
-      LOGGER.log(Level.INFO, "Finish Extract Data " + startTime + " - " + endTime + " , it took : " + (System.currentTimeMillis() - startExtractTime.getTime()) / 1000 + " seconds");
+      executorService.shutdown();
     } catch (InterruptedException e) {
       LOGGER.log(Level.SEVERE,"InterruptedException "+e.getMessage());
     } catch (ExecutionException e) {
@@ -66,7 +65,7 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
     return urls.stream().map(url -> (Callable<Stream<Map<String, Object>>>) () -> {
       String fileLocation = downloadFile(url);
       Stream<Map<String, Object>> mapStream = JsonConverter.convertJsonObjectsToStreamFromFile(fileLocation);
-      new File(fileLocation).deleteOnExit();
+      new File(fileLocation).delete();
       return mapStream;
     }).collect(Collectors.toList());
   }
