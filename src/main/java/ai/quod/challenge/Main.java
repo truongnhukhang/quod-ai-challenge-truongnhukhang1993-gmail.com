@@ -3,10 +3,11 @@ package ai.quod.challenge;
 import ai.quod.challenge.converter.DateTimeConverter;
 import ai.quod.challenge.extractor.Extractor;
 import ai.quod.challenge.extractor.GithubExtractor;
-import ai.quod.challenge.tranfomer.GithubTransformer;
+import ai.quod.challenge.tranfomer.github.GithubTransformer;
 import ai.quod.challenge.tranfomer.Transformer;
-import ai.quod.challenge.tranfomer.calculator.BaseCalculator;
-import ai.quod.challenge.tranfomer.calculator.CommitCalculator;
+import ai.quod.challenge.tranfomer.github.calculator.AverageCommitCalculator;
+import ai.quod.challenge.tranfomer.github.calculator.BaseCalculator;
+import ai.quod.challenge.tranfomer.github.calculator.CommitCalculator;
 import ai.quod.challenge.transporter.CsvTransporter;
 import ai.quod.challenge.transporter.Transporter;
 
@@ -62,10 +63,11 @@ public class Main {
       LOGGER.log(Level.INFO, "Finish Extract Data " + startTime + " - " + endTime + " , it took : " + (System.currentTimeMillis() - startExtractTime.getTime()) / 1000 + " seconds");
       Date startTransform = new Date();
       BaseCalculator commitMetric = new CommitCalculator();
-      Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric));
+      BaseCalculator averageCommitPerDay = new AverageCommitCalculator();
+      Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDay));
       data.put("data",git.transform(data));
       data.put("filename","heath_score.csv");
-      data.put("headers",new String[]{"org","repo_name","health_score","num_commits"});
+      data.put("headers",new String[]{"org","repo_name","health_score","num_commits","average_commit(push)_per_day"});
       Transporter csvTransporter = new CsvTransporter();
       csvTransporter.sendTo(data);
       LOGGER.log(Level.INFO, "Finish Transform and send Data " + startTime + " - " + endTime + " , it took : " + (System.currentTimeMillis() - startTransform.getTime()) / 1000 + " seconds");

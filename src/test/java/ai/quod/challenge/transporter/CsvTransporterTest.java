@@ -1,9 +1,9 @@
 package ai.quod.challenge.transporter;
 
-import ai.quod.challenge.tranfomer.GithubTransformer;
+import ai.quod.challenge.tranfomer.github.GithubTransformer;
 import ai.quod.challenge.tranfomer.Transformer;
-import ai.quod.challenge.tranfomer.calculator.BaseCalculator;
-import ai.quod.challenge.tranfomer.calculator.CommitCalculator;
+import ai.quod.challenge.tranfomer.github.calculator.BaseCalculator;
+import ai.quod.challenge.tranfomer.github.calculator.CommitCalculator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

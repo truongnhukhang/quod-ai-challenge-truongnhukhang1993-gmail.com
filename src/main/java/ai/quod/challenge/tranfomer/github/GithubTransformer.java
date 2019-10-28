@@ -1,0 +1,62 @@
+package ai.quod.challenge.tranfomer.github;
+
+import ai.quod.challenge.tranfomer.Transformer;
+import ai.quod.challenge.tranfomer.github.calculator.BaseCalculator;
+import ai.quod.challenge.tranfomer.github.domain.GithubEvent;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public class GithubTransformer implements Transformer<Stream<Map<String,Object>>> {
+
+  private ConcurrentHashMap<String,Object> calculateResult = new ConcurrentHashMap<>();
+  private List<BaseCalculator> calculateFunctions = null;
+
+  public GithubTransformer(List<BaseCalculator> calculateFunctions) {
+    this.calculateFunctions = calculateFunctions;
+    calculateFunctions.forEach(baseCalculator -> {
+      baseCalculator.setCalculateResult(calculateResult);
+      baseCalculator.initMetric();
+    });
+  }
+
+  @Override
+  public Stream<Map<String, Object>> transform(Map<String, Object> data) {
+    Stream<Map<String, Object>> githubEvents = (Stream<Map<String, Object>>) data.get("data");
+    githubEvents = githubEvents.parallel().filter(GithubEvent::containRepositoryInfo);
+    githubEvents = applyMetricCalculatorFor(githubEvents);
+    githubEvents = githubEvents.map(GithubEvent::getRepository).distinct().collect(Collectors.toList()).stream();
+    githubEvents = applyHealthScoreCalculatorFor(githubEvents);
+    githubEvents = githubEvents.sorted((o1, o2) -> {
+      Double heathScore1 = (Double) o1.get("health_score");
+      Double heathScore2 = (Double) o2.get("health_score");
+      return heathScore2.compareTo(heathScore1);
+    });
+    return githubEvents;
+  }
+
+  private Stream<Map<String, Object>> applyHealthScoreCalculatorFor(Stream<Map<String, Object>> githubEvents) {
+    for (int i = 0; i < calculateFunctions.size(); i++) {
+      Function<Map<String, Object>,Map<String, Object>> healthScoreCalculator = (Function<Map<String, Object>,Map<String, Object>>) calculateFunctions.get(i);
+      githubEvents = githubEvents.map(healthScoreCalculator);
+    }
+    return githubEvents;
+  }
+
+  private Stream<Map<String, Object>> applyMetricCalculatorFor(Stream<Map<String, Object>> githubEvents) {
+    for (int i = 0; i < calculateFunctions.size(); i++) {
+      Consumer<Map<String, Object>> metricCalculator = (Consumer<Map<String, Object>>) calculateFunctions.get(i);
+      githubEvents = githubEvents.peek(metricCalculator);
+    }
+    return githubEvents;
+  }
+
+
+
+
+}

@@ -1,4 +1,4 @@
-package ai.quod.challenge.tranfomer.calculator;
+package ai.quod.challenge.tranfomer.github.calculator;
 
 import java.util.concurrent.ConcurrentHashMap;
 
