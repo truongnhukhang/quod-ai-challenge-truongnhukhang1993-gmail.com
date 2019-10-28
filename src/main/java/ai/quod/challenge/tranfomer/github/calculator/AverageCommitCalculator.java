@@ -75,7 +75,7 @@ public class AverageCommitCalculator extends BaseCalculator
       Double maxAverageCommit = (Double) calculateResult.get(MAX_AVERAGE_COMMIT_PER_DAY);
       repository.put("health_score",currentScore+averageCommit*1.0/maxAverageCommit);
     } else {
-      repository.put("average_commit_per_day",0.0);
+      repository.put("average_commit(push)_per_day",0.0);
     }
     return repository;
   }
