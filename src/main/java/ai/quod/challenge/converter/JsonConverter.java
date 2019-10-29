@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JsonConverter {
@@ -28,7 +29,7 @@ public class JsonConverter {
         LOGGER.log(Level.WARNING, "JsonProcessingException error :" + line);
       }
       return mapResult;
-    }).filter(Objects::nonNull);
+    }).filter(Objects::nonNull).collect(Collectors.toList()).stream();
     return mapStream;
   }
 }
