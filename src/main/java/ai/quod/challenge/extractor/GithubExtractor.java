@@ -11,7 +11,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -31,6 +30,7 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
    * This function will extract data from GHArchive to a Stream contain Git event information .
    * In case , the period between of start time and end time to large ,
    * we have to make that period become a list of smaller period (1 hours). And extract them concurrently.
+   *
    * @param resourceUrl
    * @return
    */
@@ -45,34 +45,42 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
     try {
       List<Future<Stream<Map<String, Object>>>> futures = executorService.invokeAll(worker);
       for (int i = 0; i < futures.size(); i++) {
-        result = Stream.concat(result,futures.get(i).get());
+        result = Stream.concat(result, futures.get(i).get());
       }
       executorService.shutdown();
+      if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+        LOGGER.log(Level.WARNING, "Threads did't finish after shutdown in 30s . Start kill the threads");
+      }
     } catch (InterruptedException e) {
-      LOGGER.log(Level.SEVERE,"InterruptedException "+e.getMessage());
+      LOGGER.log(Level.SEVERE, "InterruptedException " + e.getMessage());
     } catch (ExecutionException e) {
-      LOGGER.log(Level.SEVERE,"ExecutionException "+e.getMessage());
+      LOGGER.log(Level.SEVERE, "ExecutionException " + e.getMessage());
     }
     return result;
   }
 
   /**
    * Assign worker for each url . Each worker is a Callable , it's jobs include download data from url and transform it to Stream json
+   *
    * @param urls
    * @return
    */
   private List<Callable<Stream<Map<String, Object>>>> assignWorkerForEachUrl(List<String> urls) {
     return urls.stream().map(url -> (Callable<Stream<Map<String, Object>>>) () -> {
       String fileLocation = downloadFile(url);
-      Stream<Map<String, Object>> mapStream = JsonConverter.convertJsonObjectsToStreamFromFile(fileLocation);
-      new File(fileLocation).delete();
-      return mapStream;
+      if (fileLocation != null) {
+        Stream<Map<String, Object>> mapStream = JsonConverter.convertJsonObjectsToStreamFromFile(fileLocation);
+        new File(fileLocation).delete();
+        return mapStream;
+      }
+      return Stream.empty();
     }).collect(Collectors.toList());
   }
 
 
   /**
    * Download file use GZIPInputStream to unzip and return file location
+   *
    * @param url
    * @return
    */
@@ -80,16 +88,17 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
 
     LOGGER.log(Level.INFO, "Start download Data from " + url);
     // download file
-    URLConnection openConnection = null;
+    String extractFileName = "Temp" + System.currentTimeMillis() + ".json";
+    FileOutputStream extractFileStream = null;
     try {
+      URLConnection openConnection = null;
       openConnection = new URL(url).openConnection();
-      openConnection.setConnectTimeout(0);
-      openConnection.setReadTimeout(0);
+      openConnection.setConnectTimeout(10000);
+      openConnection.setReadTimeout(10000);
       openConnection.addRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
       InputStream is = openConnection.getInputStream();
       is = new GZIPInputStream(is);
-      String extractFileName = "Temp" + System.currentTimeMillis() + ".json";
-      FileOutputStream extractFileStream = new FileOutputStream(extractFileName);
+      extractFileStream = new FileOutputStream(extractFileName);
       IOUtils.copy(is, extractFileStream, 1024 * 1024);
       is.close();
       extractFileStream.flush();
@@ -97,7 +106,15 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
       return extractFileName;
     } catch (IOException e) {
       LOGGER.log(Level.SEVERE, "IOException " + e.getMessage());
+      File file = new File(extractFileName);
+      file.delete();
+      try {
+        extractFileStream.close();
+      } catch (IOException ex) {
+        ex.printStackTrace();
+      }
+      return null;
     }
-    return "";
+
   }
 }
