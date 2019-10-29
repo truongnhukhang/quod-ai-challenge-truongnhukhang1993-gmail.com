@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * This class is use to get data from Map<String,Object> githubEvent
+ */
 public class GithubEvent {
 
   public static final String TYPE = "type";
@@ -34,8 +37,11 @@ public class GithubEvent {
 
   public static Map<String,Object> getIssue(Map<String,Object> issueEvent) {
     Map<String,Object> payload = (Map<String, Object>) issueEvent.get("payload");
-    Map<String,Object> issue = (Map<String, Object>) payload.get("issue");
-    return issue;
+    try {
+      return  (Map<String, Object>) payload.get("issue");
+    } catch (ClassCastException e) {
+      return null;
+    }
   }
 
   public static Integer getCommitSize(Map<String, Object> event) {
