@@ -30,13 +30,13 @@ public class GithubEvent {
     if(!ISSUE_EVENT.equals(event.get(TYPE))) {
       return false;
     }
-    Map<String,Object> payload = (Map<String, Object>) event.get("payload");
+    Map<String, Object> payload = getPayload(event);
     String action = (String) payload.get("action");
     return ISSUE_CLOSED.equals(action);
   }
 
   public static Map<String,Object> getIssue(Map<String,Object> issueEvent) {
-    Map<String,Object> payload = (Map<String, Object>) issueEvent.get("payload");
+    Map<String, Object> payload = getPayload(issueEvent);
     try {
       return  (Map<String, Object>) payload.get("issue");
     } catch (ClassCastException e) {
@@ -44,8 +44,18 @@ public class GithubEvent {
     }
   }
 
+  private static Map<String, Object> getPayload(Map<String, Object> githubEvent) {
+    return (Map<String, Object>) githubEvent.get("payload");
+  }
+
+  public static Map<String,Object> getPullRequestUser(Map<String,Object> pullRequestEvent) {
+    Map<String, Object> payload = getPayload(pullRequestEvent);
+    Map<String,Object> pullRequest = (Map<String, Object>) payload.get("pull_request");
+    return (Map<String, Object>) pullRequest.get("user");
+  }
+
   public static Integer getCommitSize(Map<String, Object> event) {
-    Map<String,Object> payload = (Map<String, Object>) event.get("payload");
+    Map<String, Object> payload = getPayload(event);
     return (Integer) payload.get("size");
   }
 

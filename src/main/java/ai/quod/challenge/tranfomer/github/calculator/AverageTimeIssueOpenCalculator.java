@@ -46,7 +46,9 @@ public class AverageTimeIssueOpenCalculator extends BaseCalculator {
       Double averageTime = (Double) averageTimeIssueInfo.get("averageTime");
       repository.put("average_time_issue_remain_opened(hours)",averageTime);
       Double minTimeIssue = (Double) calculateResult.get(MIN_TIME_ISSUE_REMAIN_OPEN);
-      repository.put("health_score",currentScore+minTimeIssue*1.0/averageTime);
+      if(averageTime>0) {
+        repository.put("health_score",currentScore+minTimeIssue*1.0/averageTime);
+      }
     } else {
       repository.put("average_time_issue_remain_opened(hours)",0.0);
     }

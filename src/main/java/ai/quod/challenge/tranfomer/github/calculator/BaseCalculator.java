@@ -20,7 +20,7 @@ public abstract class BaseCalculator implements Consumer<Map<String,Object>>, Fu
     try {
       metricCalculate(event);
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE,e.getMessage() + " in event : " + event.toString());
+      LOGGER.log(Level.SEVERE,e.getMessage() + " in event : " + event.get("id") + " - " + event.get("type") + " - " + event.get("created_at"));
     }
   }
 

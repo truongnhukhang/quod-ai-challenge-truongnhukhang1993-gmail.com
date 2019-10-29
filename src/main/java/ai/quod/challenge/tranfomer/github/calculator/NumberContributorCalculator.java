@@ -1,7 +1,9 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static ai.quod.challenge.tranfomer.github.domain.GithubEvent.*;
 
@@ -13,7 +15,7 @@ public class NumberContributorCalculator extends BaseCalculator {
   @Override
   public void initMetric() {
     calculateResult.put(MAX_NUMBER_CONTRIBUTOR,0);
-    calculateResult.put(NUMBER_CONTRIBUTOR_FOR_EACH_REPO,new HashMap<Long,Integer>());
+    calculateResult.put(NUMBER_CONTRIBUTOR_FOR_EACH_REPO,new HashMap<Long, Set<Integer>>());
   }
 
   @Override
@@ -26,13 +28,13 @@ public class NumberContributorCalculator extends BaseCalculator {
 
   @Override
   public Map<String, Object> healthScoreCalculate(Map<String, Object> repository) {
-    Map<Long,Integer> repoContributors = (Map<Long, Integer>) calculateResult.get(NUMBER_CONTRIBUTOR_FOR_EACH_REPO);
-    Integer numberContributorOfProject = repoContributors.get(repository.get("id"));
+    Map<Long,Set<Integer>> repoContributors = (Map<Long, Set<Integer>>) calculateResult.get(NUMBER_CONTRIBUTOR_FOR_EACH_REPO);
+    Set<Integer> numberContributorOfProject = repoContributors.get(repository.get("id"));
     double currentScore = (double) repository.get("health_score");
     if(numberContributorOfProject!=null) {
-      Integer maxNumberCommit = (Integer) calculateResult.get(MAX_NUMBER_CONTRIBUTOR);
-      repository.put("num_contributor", numberContributorOfProject);
-      double commit_score = numberContributorOfProject*1.0/maxNumberCommit;
+      Integer maxNumberContributor = (Integer) calculateResult.get(MAX_NUMBER_CONTRIBUTOR);
+      repository.put("num_contributor", numberContributorOfProject.size());
+      double commit_score = numberContributorOfProject.size()*1.0/maxNumberContributor;
       repository.put("health_score", currentScore+commit_score);
     } else {
       repository.put("num_contributor", 0);
@@ -49,15 +51,15 @@ public class NumberContributorCalculator extends BaseCalculator {
 
   private Integer updateNumberContributorOfRepo(Map<String, Object> event) {
     Long repository = getRepositoryId(event);
-    Map<Long,Integer> numContributorsOfRepos = (Map<Long, Integer>) calculateResult.get(NUMBER_CONTRIBUTOR_FOR_EACH_REPO);
-    Integer currentContributor = numContributorsOfRepos.get(repository);
-    if(currentContributor==null) {
-      currentContributor = 1;
-    } else {
-      currentContributor = currentContributor + 1;
+    Map<String,Object> user = getPullRequestUser(event);
+    Map<Long,Set<Integer>> numContributorsOfRepos = (Map<Long, Set<Integer>>) calculateResult.get(NUMBER_CONTRIBUTOR_FOR_EACH_REPO);
+    Set<Integer> currentContributors = numContributorsOfRepos.get(repository);
+    if(currentContributors==null) {
+      currentContributors = new HashSet<>();
     }
-    numContributorsOfRepos.put(repository,currentContributor);
-    return currentContributor;
+    currentContributors.add((Integer) user.get("id"));
+    numContributorsOfRepos.put(repository,currentContributors);
+    return currentContributors.size();
   }
 
 }
