@@ -8,8 +8,12 @@ import java.util.Map;
 
 public class GithubEvent {
 
-  public static final String PUSH_EVENT = "PushEvent";
   public static final String TYPE = "type";
+
+  public static final String PUSH_EVENT = "PushEvent";
+  public static final String PULL_REQUEST_EVENT = "PullRequestEvent";
+  public static final String ISSUE_EVENT = "IssuesEvent";
+  public static final String ISSUE_CLOSED = "closed";
 
   public static Long getRepositoryId(Map<String, Object> event) {
     Map<String,Object> repo = (Map<String, Object>) event.get("repo");
@@ -17,6 +21,21 @@ public class GithubEvent {
       repo = (Map<String, Object>) event.get("repository");
     }
     return Long.valueOf((Integer) repo.get("id"));
+  }
+
+  public static boolean isIssueEventAndIssueClosed(Map<String,Object> event) {
+    if(!ISSUE_EVENT.equals(event.get(TYPE))) {
+      return false;
+    }
+    Map<String,Object> payload = (Map<String, Object>) event.get("payload");
+    String action = (String) payload.get("action");
+    return ISSUE_CLOSED.equals(action);
+  }
+
+  public static Map<String,Object> getIssue(Map<String,Object> issueEvent) {
+    Map<String,Object> payload = (Map<String, Object>) issueEvent.get("payload");
+    Map<String,Object> issue = (Map<String, Object>) payload.get("issue");
+    return issue;
   }
 
   public static Integer getCommitSize(Map<String, Object> event) {

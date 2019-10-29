@@ -8,6 +8,7 @@ import ai.quod.challenge.tranfomer.github.calculator.BaseCalculator;
 import ai.quod.challenge.tranfomer.github.calculator.CommitCalculator;
 import ai.quod.challenge.tranfomer.github.GithubTransformer;
 import ai.quod.challenge.tranfomer.Transformer;
+import ai.quod.challenge.tranfomer.github.calculator.NumberContributorCalculator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -69,8 +70,9 @@ public class GithubTransformerTest {
     data.put("data",downloadedData);
     BaseCalculator commitMetric = new CommitCalculator();
     BaseCalculator averageMetric = new AverageCommitCalculator();
+    BaseCalculator contributorMetric = new NumberContributorCalculator();
     System.out.println("Start Transform : " + new Date());
-    Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric,averageMetric));
+    Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric,averageMetric,contributorMetric));
     List<Map<String,Object>> result =  git.transform(data).collect(Collectors.toList());
     System.out.println("End Transform : " + new Date());
     System.out.println(result.size());
