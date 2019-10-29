@@ -3,6 +3,7 @@ package ai.quod.challenge.transporter;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
@@ -22,6 +23,10 @@ public class CsvTransporter implements Transporter {
       Stream<Map<String, Object>> projectStream = (Stream<Map<String, Object>>) data.get("data");
       String[] headers = (String[]) data.get("headers");
       String filename = (String) data.get("filename");
+      File file = new File(filename);
+      if(file.exists()) {
+        file.delete();
+      }
       FileWriter out = new FileWriter(filename);
       List<Map<String, Object>> projects = projectStream.collect(Collectors.toList());
       try (CSVPrinter printer = new CSVPrinter(out, CSVFormat.DEFAULT

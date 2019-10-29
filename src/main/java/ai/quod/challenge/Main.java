@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Main {
@@ -58,19 +59,20 @@ public class Main {
       Map<String,Object> data = new HashMap<>();
       Extractor<Map<String,Object>> extractor = new GithubExtractor();
       data.put("data",extractor.extractDataFrom(resourceUrl));
-      LOGGER.log(Level.INFO, "Finish Extract Data " + startTime + " - " + endTime + " , it took : " + (System.currentTimeMillis() - startExtractTime.getTime()) / 1000 + " seconds");
+      Date endExtractTime = new Date();
       Date startTransform = new Date();
       BaseCalculator commitMetric = new CommitCalculator();
       BaseCalculator averageCommitPerDayMetric = new AverageCommitCalculator();
       BaseCalculator numberContributorMetric = new NumberContributorCalculator();
       BaseCalculator averageTimeIssues = new AverageTimeIssueOpenCalculator();
       Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric,averageTimeIssues));
-      data.put("data",git.transform(data));
+      data.put("data",git.transform(data).collect(Collectors.toList()).stream());
       data.put("filename","heath_score.csv");
       data.put("headers",new String[]{"org","repo_name","health_score","num_commits","average_commit(push)_per_day","num_contributor","average_time_issue_remain_opened(hours)"});
       Transporter csvTransporter = new CsvTransporter();
       csvTransporter.sendTo(data);
-      LOGGER.log(Level.INFO, "Finish Transform and send Data " + startTime + " - " + endTime + " , it took : " + (System.currentTimeMillis() - startTransform.getTime()) / 1000 + " seconds");
+      LOGGER.log(Level.INFO, "Extract Data " + startTime + " - " + endTime + " time : " + (endExtractTime.getTime() - startExtractTime.getTime()) / 1000 + " seconds");
+      LOGGER.log(Level.INFO, "Transform and send Data " + startTime + " - " + endTime + " time : " + (System.currentTimeMillis() - startTransform.getTime()) / 1000 + " seconds");
     }
   }
 }
