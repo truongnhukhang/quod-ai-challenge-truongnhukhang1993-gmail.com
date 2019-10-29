@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -27,7 +28,7 @@ public class JsonConverter {
         LOGGER.log(Level.WARNING, "JsonProcessingException error :" + line);
       }
       return mapResult;
-    });
+    }).filter(Objects::nonNull);
     return mapStream;
   }
 }
