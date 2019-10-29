@@ -42,7 +42,7 @@ public class GithubTransformer implements Transformer<Stream<Map<String,Object>>
 
   private Stream<Map<String, Object>> applyHealthScoreCalculatorFor(Stream<Map<String, Object>> githubEvents) {
     for (int i = 0; i < calculateFunctions.size(); i++) {
-      Function<Map<String, Object>,Map<String, Object>> healthScoreCalculator = (Function<Map<String, Object>,Map<String, Object>>) calculateFunctions.get(i);
+      Function<Map<String, Object>,Map<String, Object>> healthScoreCalculator = calculateFunctions.get(i);
       githubEvents = githubEvents.map(healthScoreCalculator);
     }
     return githubEvents;
@@ -50,7 +50,7 @@ public class GithubTransformer implements Transformer<Stream<Map<String,Object>>
 
   private Stream<Map<String, Object>> applyMetricCalculatorFor(Stream<Map<String, Object>> githubEvents) {
     for (int i = 0; i < calculateFunctions.size(); i++) {
-      Consumer<Map<String, Object>> metricCalculator = (Consumer<Map<String, Object>>) calculateFunctions.get(i);
+      Consumer<Map<String, Object>> metricCalculator = calculateFunctions.get(i);
       githubEvents = githubEvents.peek(metricCalculator);
     }
     return githubEvents;

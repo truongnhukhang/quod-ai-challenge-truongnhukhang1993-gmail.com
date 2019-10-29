@@ -8,8 +8,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class AverageCommitCalculator extends BaseCalculator
-    implements Consumer<Map<String,Object>>, Function<Map<String,Object>,Map<String,Object>> {
+public class AverageCommitCalculator extends BaseCalculator {
 
   private static final String MAX_AVERAGE_COMMIT_PER_DAY = "maxAverage";
   private static final String AVERAGE_COMMIT_PER_DAY_BY_REPO_ID = "average";
@@ -20,11 +19,27 @@ public class AverageCommitCalculator extends BaseCalculator
   }
 
   @Override
-  public void accept(Map<String, Object> event) {
+  public void metricCalculate(Map<String, Object> event) {
     if(PUSH_EVENT.equals(event.get(TYPE))) {
       Double currentAverageCommitOfRepo = updateAverageCommitOfRepo(event);
       updateMaxAverageCommit(currentAverageCommitOfRepo);
     }
+  }
+
+  @Override
+  public Map<String, Object> healthScoreCalculate(Map<String, Object> repository) {
+    Map<Long,Map<String,Object>> averageCommitPerDayInfoByRepo = (Map<Long, Map<String, Object>>) calculateResult.get(AVERAGE_COMMIT_PER_DAY_BY_REPO_ID);
+    Map<String,Object> averageCommitPerDayInfo = averageCommitPerDayInfoByRepo.get(repository.get("id"));
+    double currentScore = (double) repository.get("health_score");
+    if(averageCommitPerDayInfo!=null) {
+      Double averageCommit = (Double) averageCommitPerDayInfo.get("averageCommit");
+      repository.put("average_commit(push)_per_day",averageCommit);
+      Double maxAverageCommit = (Double) calculateResult.get(MAX_AVERAGE_COMMIT_PER_DAY);
+      repository.put("health_score",currentScore+averageCommit*1.0/maxAverageCommit);
+    } else {
+      repository.put("average_commit(push)_per_day",0.0);
+    }
+    return repository;
   }
 
   private void updateMaxAverageCommit(Double currentAverageCommitOfRepo) {
@@ -64,19 +79,4 @@ public class AverageCommitCalculator extends BaseCalculator
     return currentAverageCommit;
   }
 
-  @Override
-  public Map<String, Object> apply(Map<String, Object> repository) {
-    Map<Long,Map<String,Object>> averageCommitPerDayInfoByRepo = (Map<Long, Map<String, Object>>) calculateResult.get(AVERAGE_COMMIT_PER_DAY_BY_REPO_ID);
-    Map<String,Object> averageCommitPerDayInfo = averageCommitPerDayInfoByRepo.get(repository.get("id"));
-    double currentScore = (double) repository.get("health_score");
-    if(averageCommitPerDayInfo!=null) {
-      Double averageCommit = (Double) averageCommitPerDayInfo.get("averageCommit");
-      repository.put("average_commit(push)_per_day",averageCommit);
-      Double maxAverageCommit = (Double) calculateResult.get(MAX_AVERAGE_COMMIT_PER_DAY);
-      repository.put("health_score",currentScore+averageCommit*1.0/maxAverageCommit);
-    } else {
-      repository.put("average_commit(push)_per_day",0.0);
-    }
-    return repository;
-  }
 }
