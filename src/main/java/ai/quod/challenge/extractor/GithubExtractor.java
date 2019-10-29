@@ -30,7 +30,7 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
   /**
    * This function will extract data from GHArchive to a Stream contain Git event information .
    * In case , the period between of start time and end time to large ,
-   * we have to make that period become a list of smaller period . And extract them concurrently.
+   * we have to make that period become a list of smaller period (1 hours). And extract them concurrently.
    * @param resourceUrl
    * @return
    */
