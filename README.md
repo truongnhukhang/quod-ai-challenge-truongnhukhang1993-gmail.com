@@ -1,6 +1,6 @@
 # GitHub Repository health measure Project
 
-Project help you evaluate which repository have a good health. The health score was calculate based on some metric such as commit , contributor , number pull request .
+Project helps you evaluate which repository has good health. The health score was calculate based on some metric such as commit, contributor, number pull request.
 
 ## Building
 
@@ -30,7 +30,7 @@ This project use 3 small library to handle IO processing, Json parsing, and Expo
 2. jackson-databind
 3. commons-csv
 
-## Exetending 
+## Extending 
 
 Overview flow 
 
@@ -82,17 +82,17 @@ To add a new metric calculator .
 ## Technical decisions
 ### what frameworks/libraries did you use? 
 
-   As mentioned in dependencies section . i use 3 small libraries apache-common-io, jackson-databind , apache-common-csv to handle IO , JSON , CSV .
+   As mentioned in dependencies section . I use 3 small libraries apache-common-io, jackson-databind , apache-common-csv to handle IO , JSON , CSV .
 
 ### What are the benefits of those libraries?
 
-   I dont want to reinvent the wheel . 
+   I don't want to reinvent the wheel . 
    
 ### What would you improve in your code?
 
-1. Application download data from GHArchive by mutilthreading mechanism which each thread take responsibility one hour data . Sometime the GHArchive stop our request (may be i reach their rate limit ) lead to download thread stop and we lost some hour data -> thinking about implement exponential backoff function .
+1. Application download data from GHArchive by multithreading mechanism which each thread takes responsibility one-hour data . Sometimes the GHArchive stop our request (maybe I reach their rate limit ) lead to download thread stop and we lost some hour data -> thinking about implementing exponential backoff function
 
-2. Sometime we got the wrong Json format exception . I just log it and show to screent . Should be save it to DB or file so we can try to investigate it later
+2. Sometimes we got the wrong Json format exception . I just log them and show to screen . Should be saved it to DB or file so we can try to investigate it later
 
 3. Comment metric calculator .
    
