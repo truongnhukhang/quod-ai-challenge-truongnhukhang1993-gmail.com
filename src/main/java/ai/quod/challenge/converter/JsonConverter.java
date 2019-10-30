@@ -29,7 +29,7 @@ public class JsonConverter {
         LOGGER.log(Level.WARNING, "JsonProcessingException error :" + line);
       }
       return mapResult;
-    }).filter(Objects::nonNull).collect(Collectors.toList()).stream();
+    }).filter(Objects::nonNull);
     return mapStream;
   }
 }

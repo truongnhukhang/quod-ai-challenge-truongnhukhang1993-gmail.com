@@ -70,7 +70,7 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
       String fileLocation = downloadFile(url);
       if (fileLocation != null) {
         Stream<Map<String, Object>> mapStream = JsonConverter.convertJsonObjectsToStreamFromFile(fileLocation);
-        new File(fileLocation).delete();
+        new File(fileLocation).deleteOnExit();
         return mapStream;
       }
       return Stream.empty();
@@ -107,7 +107,7 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
     } catch (IOException e) {
       LOGGER.log(Level.SEVERE, "IOException " + e.getMessage());
       File file = new File(extractFileName);
-      file.delete();
+      file.deleteOnExit();
       try {
         extractFileStream.close();
       } catch (IOException ex) {
