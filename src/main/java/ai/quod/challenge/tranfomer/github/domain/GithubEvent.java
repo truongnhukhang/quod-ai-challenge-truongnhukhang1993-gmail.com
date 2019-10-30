@@ -48,6 +48,14 @@ public class GithubEvent {
     return (Map<String, Object>) githubEvent.get("payload");
   }
 
+  public static String getActorLogin(Map<String,Object> githubEvent) {
+    Map<String,Object> actor = (Map<String, Object>) githubEvent.get("actor_attributes");
+    if(actor==null) {
+      actor = (Map<String, Object>) githubEvent.get("actor");
+    }
+    return (String) actor.get("login");
+  }
+
   public static Map<String,Object> getPullRequestUser(Map<String,Object> pullRequestEvent) {
     Map<String, Object> payload = getPayload(pullRequestEvent);
     Map<String,Object> pullRequest = (Map<String, Object>) payload.get("pull_request");

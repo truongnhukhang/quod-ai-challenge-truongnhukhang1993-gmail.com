@@ -65,10 +65,11 @@ public class Main {
       BaseCalculator averageCommitPerDayMetric = new AverageCommitCalculator();
       BaseCalculator numberContributorMetric = new NumberContributorCalculator();
       BaseCalculator averageTimeIssues = new AverageTimeIssueOpenCalculator();
-      Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric,averageTimeIssues));
+      BaseCalculator ratioCommitPerDev = new RatioCommitPerDevelopersCalculator();
+      Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric, averageTimeIssues, ratioCommitPerDev));
       data.put("data",git.transform(data).collect(Collectors.toList()).stream());
       data.put("filename","heath_score.csv");
-      data.put("headers",new String[]{"org","repo_name","health_score","num_commits","average_commit(push)_per_day","num_contributor","average_time_issue_remain_opened(hours)"});
+      data.put("headers",new String[]{"org","repo_name","health_score","num_commits","average_commit(push)_per_day","num_contributor","average_time_issue_remain_opened(hours)","Ratio_Commit_Per_Dev"});
       Transporter csvTransporter = new CsvTransporter();
       csvTransporter.sendTo(data);
       LOGGER.log(Level.INFO, "Extract Data " + startTime + " - " + endTime + " time : " + (endExtractTime.getTime() - startExtractTime.getTime()) / 1000 + " seconds");
