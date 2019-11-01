@@ -3,6 +3,7 @@ package ai.quod.challenge.tranfomer.github;
 import ai.quod.challenge.tranfomer.Transformer;
 import ai.quod.challenge.tranfomer.github.calculator.BaseCalculator;
 import ai.quod.challenge.tranfomer.github.domain.GithubEvent;
+import ai.quod.challenge.tranfomer.github.domain.Repository;
 
 import java.util.List;
 import java.util.Map;
@@ -14,13 +15,12 @@ import java.util.stream.Stream;
 
 public class GithubTransformer implements Transformer<Stream<Map<String,Object>>> {
 
-  private ConcurrentHashMap<String,Object> calculateResult = new ConcurrentHashMap<>();
   private List<BaseCalculator> calculateFunctions = null;
 
   public GithubTransformer(List<BaseCalculator> calculateFunctions) {
     this.calculateFunctions = calculateFunctions;
     calculateFunctions.forEach(baseCalculator -> {
-      baseCalculator.setCalculateResult(calculateResult);
+      baseCalculator.setCalculateResult(new ConcurrentHashMap<>());
       baseCalculator.initMetric();
     });
   }
@@ -33,8 +33,8 @@ public class GithubTransformer implements Transformer<Stream<Map<String,Object>>
     githubEvents = githubEvents.map(GithubEvent::getRepository).distinct().collect(Collectors.toList()).stream();
     githubEvents = applyHealthScoreCalculatorFor(githubEvents);
     githubEvents = githubEvents.sorted((o1, o2) -> {
-      Double heathScore1 = (Double) o1.get("health_score");
-      Double heathScore2 = (Double) o2.get("health_score");
+      Double heathScore1 = (Double) o1.get(Repository.HEALTH_SCORE);
+      Double heathScore2 = (Double) o2.get(Repository.HEALTH_SCORE);
       return heathScore2.compareTo(heathScore1);
     });
     return githubEvents;

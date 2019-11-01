@@ -1,23 +1,32 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
-import static ai.quod.challenge.tranfomer.github.domain.GithubEvent.*;
-
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import static ai.quod.challenge.tranfomer.github.domain.Repository.*;
+import static ai.quod.challenge.tranfomer.github.domain.GithubEvent.*;
+
 
 public class AverageCommitCalculator extends BaseCalculator {
 
   private static final String MAX_AVERAGE_COMMIT_PER_DAY = "maxAverage";
-  private static final String AVERAGE_COMMIT_PER_DAY_BY_REPO_ID = "average";
+  private static final String AVERAGE_COMMIT_PER_DAY_BY_REPO_ID = "averageCommitRepos";
+  public static final String AVERAGE_COMMIT = "averageCommit";
+  public static final String LAST_PUSH_DATE = "lastPushDate";
+  public static final String NUM_DAYS = "numDays";
+  public static final String NUM_PUSH = "numPush";
+
   @Override
   public void initMetric() {
     calculateResult.put(MAX_AVERAGE_COMMIT_PER_DAY,0.0);
     calculateResult.put(AVERAGE_COMMIT_PER_DAY_BY_REPO_ID,new HashMap<Long,Map<String,Object>>());
   }
 
+  /**
+   * this function use to calculate and update Average commit of repository per day and update the Max Average Commit.
+   * AvarageCommitPerDay = number push/ number days
+   * @param event
+   */
   @Override
   public void metricCalculate(Map<String, Object> event) {
     if(PUSH_EVENT.equals(event.get(TYPE))) {
@@ -29,15 +38,15 @@ public class AverageCommitCalculator extends BaseCalculator {
   @Override
   public Map<String, Object> healthScoreCalculate(Map<String, Object> repository) {
     Map<Long,Map<String,Object>> averageCommitPerDayInfoByRepo = (Map<Long, Map<String, Object>>) calculateResult.get(AVERAGE_COMMIT_PER_DAY_BY_REPO_ID);
-    Map<String,Object> averageCommitPerDayInfo = averageCommitPerDayInfoByRepo.get(repository.get("id"));
-    double currentScore = (double) repository.get("health_score");
+    Map<String,Object> averageCommitPerDayInfo = averageCommitPerDayInfoByRepo.get(repository.get(ID));
+    double currentScore = (double) repository.get(HEALTH_SCORE);
     if(averageCommitPerDayInfo!=null) {
-      Double averageCommit = (Double) averageCommitPerDayInfo.get("averageCommit");
-      repository.put("average_commit(push)_per_day",averageCommit);
+      Double averageCommit = (Double) averageCommitPerDayInfo.get(AVERAGE_COMMIT);
+      repository.put(AVERAGE_COMMIT_PUSH_PER_DAY,averageCommit);
       Double maxAverageCommit = (Double) calculateResult.get(MAX_AVERAGE_COMMIT_PER_DAY);
-      repository.put("health_score",currentScore+averageCommit*1.0/maxAverageCommit);
+      repository.put(HEALTH_SCORE,currentScore+averageCommit*1.0/maxAverageCommit);
     } else {
-      repository.put("average_commit(push)_per_day",0.0);
+      repository.put(AVERAGE_COMMIT_PUSH_PER_DAY,0.0);
     }
     return repository;
   }
@@ -52,31 +61,45 @@ public class AverageCommitCalculator extends BaseCalculator {
   private Double updateAverageCommitOfRepo(Map<String, Object> event) {
     Map<Long,Map<String,Object>> averageCommitPerDayInfoByRepo = (Map<Long, Map<String, Object>>) calculateResult.get(AVERAGE_COMMIT_PER_DAY_BY_REPO_ID);
     Long repository = getRepositoryId(event);
-    Map<String,Object> averageCommitPerDayInfo = averageCommitPerDayInfoByRepo.get(repository);
-    if(averageCommitPerDayInfo==null) {
-      averageCommitPerDayInfo = new HashMap<>();
-      averageCommitPerDayInfo.put("numPush",1);
-      averageCommitPerDayInfo.put("numDays",1);
-      averageCommitPerDayInfo.put("lastPushDate",getCommitDate(event).toLocalDate());
-    } else {
-      Integer numPush = (Integer) averageCommitPerDayInfo.get("numPush");
-      LocalDate pushDate = getCommitDate(event).toLocalDate();
-      LocalDate lastPushDate = (LocalDate) averageCommitPerDayInfo.get("lastPushDate");
+    LocalDate pushDate = getCommitDate(event).toLocalDate();
+    Integer numPush = 1;
+    Integer numDays = 1;
+    Double currentAverageCommit = 1.0;
+    Map<String,Object> averageCommitPerDayInfo = averageCommitPerDayInfoByRepo.computeIfAbsent(repository,repositoryKey -> new HashMap<>());
+    // update count number push
+    numPush = getNumPush(averageCommitPerDayInfo) + 1;
+    LocalDate lastPushDate = getLastPushDate(averageCommitPerDayInfo);
+    if(lastPushDate!=null) {
+      // update count number days if push date is after last push date .
       if(pushDate.isAfter(lastPushDate)) {
-        Integer numDays = (Integer) averageCommitPerDayInfo.get("numDays");
-        averageCommitPerDayInfo.put("numPush",numPush+1);
-        averageCommitPerDayInfo.put("numDays",numDays+1);
-        averageCommitPerDayInfo.put("lastPushDate",getCommitDate(event).toLocalDate());
+        numDays = getNumDays(averageCommitPerDayInfo) + 1;
       } else {
-        averageCommitPerDayInfo.put("numPush",numPush+1);
+        pushDate = lastPushDate;
       }
     }
-    Integer numPush = (Integer) averageCommitPerDayInfo.get("numPush");
-    Integer numDays = (Integer) averageCommitPerDayInfo.get("numDays");
-    Double currentAverageCommit = numPush*1.0/numDays;
-    averageCommitPerDayInfo.put("averageCommit",currentAverageCommit);
-    averageCommitPerDayInfoByRepo.put(repository,averageCommitPerDayInfo);
+    // calculate average commit perday = number push/ number day
+    currentAverageCommit = numPush*1.0/numDays;
+    updateAverageCommitPerDayInfo(pushDate, numPush, numDays, currentAverageCommit, averageCommitPerDayInfo);
     return currentAverageCommit;
+  }
+
+  private Integer getNumDays(Map<String, Object> averageCommitPerDayInfo) {
+    return averageCommitPerDayInfo.get(NUM_DAYS)==null ? 0 : (Integer) averageCommitPerDayInfo.get(NUM_DAYS);
+  }
+
+  private LocalDate getLastPushDate(Map<String, Object> averageCommitPerDayInfo) {
+    return (LocalDate) averageCommitPerDayInfo.get(LAST_PUSH_DATE);
+  }
+
+  private Integer getNumPush(Map<String, Object> averageCommitPerDayInfo) {
+    return averageCommitPerDayInfo.get(NUM_PUSH)==null ? 0 : (Integer) averageCommitPerDayInfo.get(NUM_PUSH);
+  }
+
+  private void updateAverageCommitPerDayInfo(LocalDate pushDate, Integer numPush, Integer numDays, Double currentAverageCommit, Map<String, Object> averageCommitPerDayInfo) {
+    averageCommitPerDayInfo.put(NUM_PUSH,numPush);
+    averageCommitPerDayInfo.put(NUM_DAYS,numDays);
+    averageCommitPerDayInfo.put(LAST_PUSH_DATE,pushDate);
+    averageCommitPerDayInfo.put(AVERAGE_COMMIT,currentAverageCommit);
   }
 
 }
