@@ -20,7 +20,7 @@ public class RatioCommitPerDevelopersCalculator extends BaseCalculator {
   @Override
   public void initMetric() {
     calculateResult.put(MAX_RATIO_COMMIT_PER_DEVELOPER,0.0);
-    calculateResult.put(RATIO_COMMIT_PER_DEVELOPER_REPO,new HashMap<Long,Map<String,Object>>());
+    calculateResult.put(RATIO_COMMIT_PER_DEVELOPER_REPO,new HashMap<Long,RatioCommitPerDev>());
   }
 
   @Override
@@ -41,36 +41,35 @@ public class RatioCommitPerDevelopersCalculator extends BaseCalculator {
     Long repository = getRepositoryId(event);
     Integer numCommit = getCommitSize(event);
     String actorLogin = getActorLogin(event);
-    Map<Long,Map<String,Object>> ratioCommitRepos = (Map<Long, Map<String, Object>>) calculateResult.get(RATIO_COMMIT_PER_DEVELOPER_REPO);
-    Map<String,Object> ratioCommitInfo = ratioCommitRepos.get(repository);
+    Map<Long,RatioCommitPerDev> ratioCommitRepos = (Map<Long, RatioCommitPerDev>) calculateResult.get(RATIO_COMMIT_PER_DEVELOPER_REPO);
+    RatioCommitPerDev ratioCommitInfo = ratioCommitRepos.get(repository);
     if(ratioCommitInfo==null) {
-      ratioCommitInfo = new HashMap<>();
-      Set<String> logins = new HashSet<>();
-      ratioCommitRepos.put(repository,ratioCommitInfo);
-      ratioCommitInfo.put("numCommit",numCommit);
-      logins.add(actorLogin);
-      ratioCommitInfo.put("logins",logins);
-      Double averageCommitPerDev = numCommit*1.0/logins.size();
-      ratioCommitInfo.put("ratioCommitPerDev",averageCommitPerDev);
+      ratioCommitInfo = new RatioCommitPerDev();
+      Set<String> users = new HashSet<>();
+      users.add(actorLogin);
+      updateRatioCommitPerDev(ratioCommitInfo, users, numCommit);
     } else {
-      numCommit = (Integer) ratioCommitInfo.get("numCommit") + numCommit;
-      ratioCommitInfo.put("numCommit",numCommit);
-      Set<String> logins = (Set<String>) ratioCommitInfo.get("logins");
-      logins.add(actorLogin);
-      ratioCommitInfo.put("logins",logins);
-      Double averageCommitPerDev = numCommit*1.0/logins.size();
-      ratioCommitInfo.put("ratioCommitPerDev",averageCommitPerDev);
+      Set<String> users = ratioCommitInfo.users;
+      users.add(actorLogin);
+      updateRatioCommitPerDev(ratioCommitInfo, users, ratioCommitInfo.numCommit + numCommit);
     }
-    return (Double) ratioCommitInfo.get("ratioCommitPerDev");
+    ratioCommitRepos.put(repository,ratioCommitInfo);
+    return ratioCommitInfo.ratioCommitPerDev;
+  }
+
+  private void updateRatioCommitPerDev(RatioCommitPerDev ratioCommitInfo, Set<String> users, int numCommit) {
+    ratioCommitInfo.numCommit = numCommit;
+    ratioCommitInfo.users = users;
+    ratioCommitInfo.ratioCommitPerDev = ratioCommitInfo.numCommit * 1.0 / users.size();
   }
 
   @Override
   public Repository healthScoreCalculate(Repository repository) throws Exception {
-    Map<Long,Map<String,Object>> ratioCommitRepos = (Map<Long, Map<String, Object>>) calculateResult.get(RATIO_COMMIT_PER_DEVELOPER_REPO);
-    Map<String,Object> ratioCommitInfo = ratioCommitRepos.get(repository.getId());
+    Map<Long,RatioCommitPerDev> ratioCommitRepos = (Map<Long, RatioCommitPerDev>) calculateResult.get(RATIO_COMMIT_PER_DEVELOPER_REPO);
+    RatioCommitPerDev ratioCommitInfo = ratioCommitRepos.get(repository.getId());
     double currentScore = repository.getHealthScore();
     if(ratioCommitInfo!=null) {
-      Double ratioCommitPerDev = (Double) ratioCommitInfo.get("ratioCommitPerDev");
+      Double ratioCommitPerDev = ratioCommitInfo.ratioCommitPerDev;
       repository.setRatioCommitPerDev(ratioCommitPerDev);
       Double maxRatioCommitPerDev = (Double) calculateResult.get(MAX_RATIO_COMMIT_PER_DEVELOPER);
       if(maxRatioCommitPerDev!=0) {
@@ -80,5 +79,11 @@ public class RatioCommitPerDevelopersCalculator extends BaseCalculator {
       repository.setRatioCommitPerDev(0.0);
     }
     return repository;
+  }
+
+  private class RatioCommitPerDev {
+    Integer numCommit;
+    Set<String> users;
+    Double ratioCommitPerDev;
   }
 }

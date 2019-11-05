@@ -21,7 +21,7 @@ public class AverageTimeIssueOpenCalculator extends BaseCalculator {
   @Override
   public void initMetric() {
     calculateResult.put(MIN_TIME_ISSUE_REMAIN_OPEN,Integer.MAX_VALUE*1.0);
-    calculateResult.put(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO,new HashMap<Long,Map<String,Object>>());
+    calculateResult.put(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO,new HashMap<Long,AverageTimeIssueOpen>());
   }
 
   @Override
@@ -40,11 +40,11 @@ public class AverageTimeIssueOpenCalculator extends BaseCalculator {
 
   @Override
   public Repository healthScoreCalculate(Repository repository) {
-    Map<Long,Map<String,Object>> averageTimeIssueOpenRepos = (Map<Long, Map<String, Object>>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
-    Map<String,Object> averageTimeIssueInfo = averageTimeIssueOpenRepos.get(repository.getId());
+    Map<Long,AverageTimeIssueOpen> averageTimeIssueOpenRepos = (Map<Long, AverageTimeIssueOpen>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
+    AverageTimeIssueOpen averageTimeIssueInfo = averageTimeIssueOpenRepos.get(repository.getId());
     double currentScore = repository.getHealthScore();
     if(averageTimeIssueInfo!=null) {
-      Double averageTime = (Double) averageTimeIssueInfo.get("averageTime");
+      Double averageTime = averageTimeIssueInfo.averageTime;
       repository.setAverageHoursIssueRemainOpen(averageTime);
       Double minTimeIssue = (Double) calculateResult.get(MIN_TIME_ISSUE_REMAIN_OPEN);
       if(averageTime>0) {
@@ -64,25 +64,30 @@ public class AverageTimeIssueOpenCalculator extends BaseCalculator {
   }
 
   private void updateAverageTimeIssue(Double issueTimeRemainOpen, Map<String, Object> event) {
-    Map<Long,Map<String,Object>> averageTimeIssueOpenRepos = (Map<Long, Map<String, Object>>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
+    Map<Long,AverageTimeIssueOpen> averageTimeIssueOpenRepos = (Map<Long, AverageTimeIssueOpen>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
     Long repository = getRepositoryId(event);
-    Map<String,Object> averageTimeIssue = averageTimeIssueOpenRepos.get(repository);
+    AverageTimeIssueOpen averageTimeIssue = averageTimeIssueOpenRepos.get(repository);
     if(averageTimeIssue==null) {
-      averageTimeIssue = new HashMap<>();
-      averageTimeIssue.put("issues",1);
-      averageTimeIssue.put("averageTime",issueTimeRemainOpen*1.0);
-      averageTimeIssue.put("totalTime",issueTimeRemainOpen);
+      averageTimeIssue = new AverageTimeIssueOpen();
+      averageTimeIssue.issues=1;
+      averageTimeIssue.averageTime=issueTimeRemainOpen*1.0;
+      averageTimeIssue.totalTime = issueTimeRemainOpen;
     } else {
-      Integer issues = (Integer) averageTimeIssue.get("issues");
-      issues = issues+1;
-      Double totalTime = (Double) averageTimeIssue.get("totalTime");
-      totalTime = totalTime + issueTimeRemainOpen;
+      Integer issues = averageTimeIssue.issues+1;
+      Double totalTime = averageTimeIssue.totalTime + issueTimeRemainOpen;
       Double averageTime = totalTime/issues;
-      averageTimeIssue.put("issues",issues);
-      averageTimeIssue.put("averageTime",averageTime);
-      averageTimeIssue.put("totalTime",totalTime);
+      averageTimeIssue.issues = issues;
+      averageTimeIssue.averageTime = averageTime;
+      averageTimeIssue.totalTime = totalTime;
     }
     averageTimeIssueOpenRepos.put(repository,averageTimeIssue);
+  }
+
+  private class AverageTimeIssueOpen {
+    Integer issues;
+    Double totalTime;
+    Double averageTime;
+
   }
 
 }
