@@ -1,11 +1,13 @@
 package ai.quod.challenge.transporter;
 
+import ai.quod.challenge.tranfomer.github.domain.Repository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -20,7 +22,7 @@ public class CsvTransporter implements Transporter {
   @Override
   public void sendTo(Map<String, Object> data) {
     try {
-      Stream<Map<String, Object>> projectStream = (Stream<Map<String, Object>>) data.get("data");
+      Stream<Repository> projectStream = (Stream<Repository>) data.get("data");
       String[] headers = (String[]) data.get("headers");
       String filename = (String) data.get("filename");
       File file = new File(filename);
@@ -28,13 +30,19 @@ public class CsvTransporter implements Transporter {
         file.delete();
       }
       FileWriter out = new FileWriter(filename);
-      List<Map<String, Object>> projects = projectStream.collect(Collectors.toList());
       try (CSVPrinter printer = new CSVPrinter(out, CSVFormat.DEFAULT
           .withHeader(headers))) {
-        for (Map<String, Object> project : projects) {
-          List<Object> records = Stream.of(headers).map(project::get).collect(Collectors.toList());
-          printer.printRecord(records);
-        }
+        projectStream.sequential().forEach(repository -> {
+           List<Object> records = Arrays.asList(repository.getOrg(),
+               repository.getName(), repository.getHealthScore(),repository.getNumberCommit(),repository.getAveragePushPerDay(),
+               repository.getAverageHoursIssueRemainOpen(),repository.getRatioCommitPerDev());
+          try {
+            printer.printRecord(records);
+          } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "IOException " + e.getMessage() + " records : " + repository.toString());
+          }
+        });
+
       }
     } catch (IOException e) {
       LOGGER.log(Level.SEVERE, "IOException " + e.getMessage());

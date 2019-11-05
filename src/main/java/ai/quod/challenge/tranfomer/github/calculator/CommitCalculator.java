@@ -1,5 +1,7 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
+import ai.quod.challenge.tranfomer.github.domain.Repository;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,17 +27,17 @@ public class CommitCalculator extends BaseCalculator {
   }
 
   @Override
-  public Map<String, Object> healthScoreCalculate(Map<String, Object> repository) {
+  public Repository healthScoreCalculate(Repository repository) {
     Map<Long,Long> repoCommits = (Map<Long, Long>) calculateResult.get(TOTAL_REPO_COMMIT);
-    Long numberCommitOfProject = repoCommits.get(repository.get("id"));
-    double currentScore = (double) repository.get("health_score");
+    Long numberCommitOfProject = repoCommits.get(repository.getId());
+    double currentScore = repository.getHealthScore();
     if(numberCommitOfProject!=null) {
       Long maxNumberCommit = (Long) calculateResult.get(MAX_NUMBER_COMMIT);
-      repository.put("num_commits", numberCommitOfProject);
+      repository.setNumberCommit(numberCommitOfProject);
       double commit_score = numberCommitOfProject*1.0/maxNumberCommit;
-      repository.put("health_score", currentScore+commit_score);
+      repository.setHealthScore(currentScore+commit_score);
     } else {
-      repository.put("num_commits", 0);
+      repository.setNumberCommit(0L);
     }
     return repository;
   }

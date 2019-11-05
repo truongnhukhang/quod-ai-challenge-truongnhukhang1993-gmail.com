@@ -1,6 +1,7 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
 import ai.quod.challenge.converter.DateTimeConverter;
+import ai.quod.challenge.tranfomer.github.domain.Repository;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -38,19 +39,19 @@ public class AverageTimeIssueOpenCalculator extends BaseCalculator {
   }
 
   @Override
-  public Map<String, Object> healthScoreCalculate(Map<String, Object> repository) {
+  public Repository healthScoreCalculate(Repository repository) {
     Map<Long,Map<String,Object>> averageTimeIssueOpenRepos = (Map<Long, Map<String, Object>>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
-    Map<String,Object> averageTimeIssueInfo = averageTimeIssueOpenRepos.get(repository.get("id"));
-    double currentScore = (double) repository.get("health_score");
+    Map<String,Object> averageTimeIssueInfo = averageTimeIssueOpenRepos.get(repository.getId());
+    double currentScore = repository.getHealthScore();
     if(averageTimeIssueInfo!=null) {
       Double averageTime = (Double) averageTimeIssueInfo.get("averageTime");
-      repository.put("average_time_issue_remain_opened(hours)",averageTime);
+      repository.setAverageHoursIssueRemainOpen(averageTime);
       Double minTimeIssue = (Double) calculateResult.get(MIN_TIME_ISSUE_REMAIN_OPEN);
       if(averageTime>0) {
-        repository.put("health_score",currentScore+minTimeIssue*1.0/averageTime);
+        repository.setHealthScore(currentScore+minTimeIssue*1.0/averageTime);
       }
     } else {
-      repository.put("average_time_issue_remain_opened(hours)",0.0);
+      repository.setAverageHoursIssueRemainOpen(0.0);
     }
     return repository;
   }

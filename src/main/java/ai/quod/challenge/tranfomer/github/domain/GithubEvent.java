@@ -72,8 +72,7 @@ public class GithubEvent {
     return DateTimeConverter.convertStringIS8601ToLocalDateTime(create_at);
   }
 
-  public static Map<String, Object> getRepository(Map<String, Object> githubEvent) {
-    Map<String,Object> project = new HashMap<>();
+  public static Repository getRepository(Map<String, Object> githubEvent) {
     Map<String,Object> repo = (Map<String, Object>) githubEvent.get("repo");
     Long id = 0L;
     String repoOrg = "";
@@ -88,11 +87,7 @@ public class GithubEvent {
       repoOrg = (String) repo.get("owner");
       repoName = (String) repo.get("name");
     }
-    project.put("id",id);
-    project.put("org",repoOrg);
-    project.put("repo_name",repoName);
-    project.put("health_score",0.0);
-    return project;
+    return new Repository(id,repoOrg,repoName,0.0);
   }
 
   public static boolean containRepositoryInfo(Map<String, Object> githubEvent) {

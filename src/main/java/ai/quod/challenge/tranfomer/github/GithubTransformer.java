@@ -13,7 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class GithubTransformer implements Transformer<Stream<Map<String,Object>>> {
+public class GithubTransformer implements Transformer<Stream<Repository>> {
 
   private List<BaseCalculator> calculateFunctions = null;
 
@@ -26,26 +26,22 @@ public class GithubTransformer implements Transformer<Stream<Map<String,Object>>
   }
 
   @Override
-  public Stream<Map<String, Object>> transform(Map<String, Object> data) {
+  public Stream<Repository> transform(Map<String, Object> data) {
     Stream<Map<String, Object>> githubEvents = (Stream<Map<String, Object>>) data.get("data");
     githubEvents = githubEvents.parallel().filter(GithubEvent::containRepositoryInfo);
     githubEvents = applyMetricCalculatorFor(githubEvents);
-    githubEvents = githubEvents.map(GithubEvent::getRepository).distinct().collect(Collectors.toList()).stream();
-    githubEvents = applyHealthScoreCalculatorFor(githubEvents);
-    githubEvents = githubEvents.sorted((o1, o2) -> {
-      Double heathScore1 = (Double) o1.get(Repository.HEALTH_SCORE);
-      Double heathScore2 = (Double) o2.get(Repository.HEALTH_SCORE);
-      return heathScore2.compareTo(heathScore1);
-    });
-    return githubEvents;
+    Stream<Repository> repositoryStream = githubEvents.map(GithubEvent::getRepository).distinct().collect(Collectors.toList()).parallelStream();
+    repositoryStream = applyHealthScoreCalculatorFor(repositoryStream);
+    repositoryStream = repositoryStream.sorted((o1, o2) -> o2.getHealthScore().compareTo(o1.getHealthScore()));
+    return repositoryStream;
   }
 
-  private Stream<Map<String, Object>> applyHealthScoreCalculatorFor(Stream<Map<String, Object>> githubEvents) {
+  private Stream<Repository> applyHealthScoreCalculatorFor(Stream<Repository> repositoryStream) {
     for (int i = 0; i < calculateFunctions.size(); i++) {
-      Function<Map<String, Object>,Map<String, Object>> healthScoreCalculator = calculateFunctions.get(i);
-      githubEvents = githubEvents.map(healthScoreCalculator);
+      Function<Repository,Repository> healthScoreCalculator = calculateFunctions.get(i);
+      repositoryStream = repositoryStream.map(healthScoreCalculator);
     }
-    return githubEvents;
+    return repositoryStream;
   }
 
   private Stream<Map<String, Object>> applyMetricCalculatorFor(Stream<Map<String, Object>> githubEvents) {

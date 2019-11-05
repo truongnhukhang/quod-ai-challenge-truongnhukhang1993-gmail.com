@@ -1,5 +1,7 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
+import ai.quod.challenge.tranfomer.github.domain.Repository;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -63,19 +65,19 @@ public class RatioCommitPerDevelopersCalculator extends BaseCalculator {
   }
 
   @Override
-  public Map<String, Object> healthScoreCalculate(Map<String, Object> repository) throws Exception {
+  public Repository healthScoreCalculate(Repository repository) throws Exception {
     Map<Long,Map<String,Object>> ratioCommitRepos = (Map<Long, Map<String, Object>>) calculateResult.get(RATIO_COMMIT_PER_DEVELOPER_REPO);
-    Map<String,Object> ratioCommitInfo = ratioCommitRepos.get(repository.get("id"));
-    double currentScore = (double) repository.get("health_score");
+    Map<String,Object> ratioCommitInfo = ratioCommitRepos.get(repository.getId());
+    double currentScore = repository.getHealthScore();
     if(ratioCommitInfo!=null) {
       Double ratioCommitPerDev = (Double) ratioCommitInfo.get("ratioCommitPerDev");
-      repository.put("Ratio_Commit_Per_Dev",ratioCommitPerDev);
+      repository.setRatioCommitPerDev(ratioCommitPerDev);
       Double maxRatioCommitPerDev = (Double) calculateResult.get(MAX_RATIO_COMMIT_PER_DEVELOPER);
       if(maxRatioCommitPerDev!=0) {
-        repository.put("health_score",currentScore+ratioCommitPerDev/maxRatioCommitPerDev);
+        repository.setHealthScore(currentScore+ratioCommitPerDev/maxRatioCommitPerDev);
       }
     } else {
-      repository.put("Ratio_Commit_Per_Dev",0.0);
+      repository.setRatioCommitPerDev(0.0);
     }
     return repository;
   }

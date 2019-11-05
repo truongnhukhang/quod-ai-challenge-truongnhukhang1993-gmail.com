@@ -1,5 +1,7 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
+import ai.quod.challenge.tranfomer.github.domain.Repository;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,17 +29,17 @@ public class NumberContributorCalculator extends BaseCalculator {
   }
 
   @Override
-  public Map<String, Object> healthScoreCalculate(Map<String, Object> repository) {
+  public Repository healthScoreCalculate(Repository repository) {
     Map<Long,Set<Integer>> repoContributors = (Map<Long, Set<Integer>>) calculateResult.get(NUMBER_CONTRIBUTOR_FOR_EACH_REPO);
-    Set<Integer> numberContributorOfProject = repoContributors.get(repository.get("id"));
-    double currentScore = (double) repository.get("health_score");
+    Set<Integer> numberContributorOfProject = repoContributors.get(repository.getId());
+    double currentScore = repository.getHealthScore();
     if(numberContributorOfProject!=null) {
       Integer maxNumberContributor = (Integer) calculateResult.get(MAX_NUMBER_CONTRIBUTOR);
-      repository.put("num_contributor", numberContributorOfProject.size());
+      repository.setNumberContributor(numberContributorOfProject.size());
       double commit_score = numberContributorOfProject.size()*1.0/maxNumberContributor;
-      repository.put("health_score", currentScore+commit_score);
+      repository.setHealthScore(currentScore+commit_score);
     } else {
-      repository.put("num_contributor", 0);
+      repository.setNumberContributor(0);
     }
     return repository;
   }

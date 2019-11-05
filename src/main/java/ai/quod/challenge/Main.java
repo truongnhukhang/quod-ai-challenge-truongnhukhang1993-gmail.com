@@ -67,8 +67,8 @@ public class Main {
       BaseCalculator numberContributorMetric = new NumberContributorCalculator();
       BaseCalculator averageTimeIssues = new AverageTimeIssueOpenCalculator();
       BaseCalculator ratioCommitPerDev = new RatioCommitPerDevelopersCalculator();
-      Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric, averageTimeIssues, ratioCommitPerDev));
-      data.put("data",git.transform(data).collect(Collectors.toList()).stream());
+      Transformer<Stream<Repository>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric, averageTimeIssues, ratioCommitPerDev));
+      data.put("data",git.transform(data));
       data.put("filename","heath_score.csv");
       data.put("headers",new String[]{"org","repo_name",Repository.HEALTH_SCORE,"num_commits", Repository.AVERAGE_COMMIT_PUSH_PER_DAY,"num_contributor","average_time_issue_remain_opened(hours)","Ratio_Commit_Per_Dev"});
       Transporter csvTransporter = new CsvTransporter();

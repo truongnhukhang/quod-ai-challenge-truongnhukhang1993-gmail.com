@@ -4,6 +4,7 @@ import ai.quod.challenge.tranfomer.github.GithubTransformer;
 import ai.quod.challenge.tranfomer.Transformer;
 import ai.quod.challenge.tranfomer.github.calculator.BaseCalculator;
 import ai.quod.challenge.tranfomer.github.calculator.CommitCalculator;
+import ai.quod.challenge.tranfomer.github.domain.Repository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,7 +46,7 @@ public class CsvTransporterTest {
     data.put("data",dataJson.stream());
     BaseCalculator commitMetric = new CommitCalculator();
     System.out.println("Start Transform : " + new Date());
-    Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric));
+    Transformer<Stream<Repository>> git = new GithubTransformer(Arrays.asList(commitMetric));
     data.put("data",git.transform(data));
     data.put("filename","heath_score.csv");
     data.put("headers",new String[]{"org","repo_name","health_score","num_commits"});
