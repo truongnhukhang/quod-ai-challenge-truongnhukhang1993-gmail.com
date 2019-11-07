@@ -1,11 +1,12 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
-import ai.quod.challenge.tranfomer.github.domain.Repository;
+import ai.quod.challenge.domain.github.GithubEvent;
+import ai.quod.challenge.domain.github.Repository;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static ai.quod.challenge.tranfomer.github.domain.GithubEvent.*;
+import static ai.quod.challenge.converter.GithubEventConverter.*;
 
 public class CommitCalculator extends BaseCalculator {
 
@@ -19,8 +20,8 @@ public class CommitCalculator extends BaseCalculator {
   }
 
   @Override
-  public void metricCalculate(Map<String, Object> event) throws Exception{
-    if(PUSH_EVENT.equals(event.get(TYPE))) {
+  public void metricCalculate(GithubEvent event) throws Exception{
+    if(PUSH_EVENT.equals(event.getType())) {
       Long currentRepoCommit = updateCurrentCommitOfRepository(event);
       updateMaxNumberCommit(currentRepoCommit);
     }
@@ -49,14 +50,14 @@ public class CommitCalculator extends BaseCalculator {
     }
   }
 
-  private Long updateCurrentCommitOfRepository(Map<String, Object> event) {
+  private Long updateCurrentCommitOfRepository(GithubEvent event) {
     Map<Long,Long> numberCommitsOfEachRepository = (Map<Long, Long>) calculateResult.get(TOTAL_REPO_COMMIT);
-    Long repository = getRepositoryId(event);
+    Long repository = event.getRepository().getId();
     Long currentRepoCommit = 0L;
     if(numberCommitsOfEachRepository.containsKey(repository)) {
       currentRepoCommit = numberCommitsOfEachRepository.get(repository);
     }
-    currentRepoCommit = currentRepoCommit+getCommitSize(event);
+    currentRepoCommit = currentRepoCommit+event.getCommitSize();
     numberCommitsOfEachRepository.put(repository,currentRepoCommit);
     return currentRepoCommit;
   }

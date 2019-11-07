@@ -1,12 +1,13 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
-import ai.quod.challenge.tranfomer.github.domain.Repository;
+import ai.quod.challenge.domain.github.GithubEvent;
+import ai.quod.challenge.domain.github.Repository;
 
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
-import static ai.quod.challenge.tranfomer.github.domain.GithubEvent.*;
+import static ai.quod.challenge.converter.GithubEventConverter.*;
 
 
 public class AverageCommitCalculator extends BaseCalculator {
@@ -26,8 +27,8 @@ public class AverageCommitCalculator extends BaseCalculator {
    * @param event
    */
   @Override
-  public void metricCalculate(Map<String, Object> event) {
-    if(PUSH_EVENT.equals(event.get(TYPE))) {
+  public void metricCalculate(GithubEvent event) {
+    if(PUSH_EVENT.equals(event.getType())) {
       Double currentAverageCommitOfRepo = updateAverageCommitOfRepo(event);
       updateMaxAverageCommit(currentAverageCommitOfRepo);
     }
@@ -56,10 +57,10 @@ public class AverageCommitCalculator extends BaseCalculator {
     }
   }
 
-  private Double updateAverageCommitOfRepo(Map<String, Object> event) {
+  private Double updateAverageCommitOfRepo(GithubEvent event) {
     Map<Long,AveragePushPerDay> averageCommitPerDayInfoByRepo = (Map<Long, AveragePushPerDay>) calculateResult.get(AVERAGE_COMMIT_PER_DAY_BY_REPO_ID);
-    Long repository = getRepositoryId(event);
-    LocalDate pushDate = getCommitDate(event).toLocalDate();
+    Long repository = event.getRepository().getId();
+    LocalDate pushDate = event.getCommitDate().toLocalDate();
     Integer numPush = 1;
     Integer numDays = 1;
     Double currentAverageCommit = 1.0;

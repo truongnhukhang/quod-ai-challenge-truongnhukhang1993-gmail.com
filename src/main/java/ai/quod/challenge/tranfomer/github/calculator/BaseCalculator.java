@@ -1,6 +1,7 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
-import ai.quod.challenge.tranfomer.github.domain.Repository;
+import ai.quod.challenge.domain.github.GithubEvent;
+import ai.quod.challenge.domain.github.Repository;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,20 +10,20 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public abstract class BaseCalculator implements Consumer<Map<String,Object>>, Function<Repository,Repository> {
+public abstract class BaseCalculator implements Consumer<GithubEvent>, Function<Repository,Repository> {
   private static final Logger LOGGER = Logger.getLogger(BaseCalculator.class.getClass().getName());
   protected ConcurrentHashMap<String,Object> calculateResult;
 
   public abstract void initMetric();
-  public abstract void metricCalculate(Map<String,Object> event) throws Exception;
+  public abstract void metricCalculate(GithubEvent event) throws Exception;
   public abstract Repository healthScoreCalculate(Repository repository) throws Exception;
 
   @Override
-  public void accept(Map<String, Object> event) {
+  public void accept(GithubEvent event) {
     try {
       metricCalculate(event);
     } catch (Exception e) {
-      LOGGER.log(Level.SEVERE,e.getMessage() + " in event : " + event.get("id") + " - " + event.get("type") + " - " + event.get("created_at"));
+      LOGGER.log(Level.SEVERE,e.getMessage() + " in event : " + event.getId() + " - " + event.getType() + " - " + event.getCreateAt());
     }
   }
 

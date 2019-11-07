@@ -1,12 +1,13 @@
 package ai.quod.challenge.transfomer;
 
 import ai.quod.challenge.converter.DateTimeConverter;
+import ai.quod.challenge.domain.github.GithubEvent;
 import ai.quod.challenge.extractor.Extractor;
 import ai.quod.challenge.extractor.GithubExtractor;
 import ai.quod.challenge.tranfomer.github.calculator.*;
 import ai.quod.challenge.tranfomer.github.GithubTransformer;
 import ai.quod.challenge.tranfomer.Transformer;
-import ai.quod.challenge.tranfomer.github.domain.Repository;
+import ai.quod.challenge.domain.github.Repository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -43,12 +44,11 @@ public class GithubTransformerTest {
       }
       return null;
     }).collect(Collectors.toList());
-    Map<String,Object> data = new HashMap<>();
-    data.put("data",dataJson.stream());
+
     BaseCalculator commitMetric = new CommitCalculator();
     System.out.println("Start Transform : " + new Date());
-    Transformer<Stream<Repository>> git = new GithubTransformer(Arrays.asList(commitMetric));
-    List<Repository> result =  git.transform(data).collect(Collectors.toList());
+    Transformer<Stream<Repository>,Stream<GithubEvent>> git = new GithubTransformer(Arrays.asList(commitMetric));
+    List<Repository> result =  git.transform(dataJson.stream().map(GithubEvent::new)).collect(Collectors.toList());
     System.out.println("End Transform : " + new Date());
     System.out.println(result.size());
     result.forEach(System.out::println);
@@ -57,22 +57,17 @@ public class GithubTransformerTest {
 
   @Test
   public void testIntegrationGithubTransformer() {
-    Extractor<Map<String,Object>> githubExtractor = new GithubExtractor();
-    Map<String,Object> resourceUrl = new HashMap<>();
+    Extractor<GithubEvent> githubExtractor = new GithubExtractor();
     LocalDateTime startTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2014-12-31T23:00:00Z");
     LocalDateTime endTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2015-01-01T00:00:00Z");
-    resourceUrl.put("startTime",startTime);
-    resourceUrl.put("endTime",endTime);
-    Stream<Map<String,Object>> downloadedData = githubExtractor.extractDataFrom(resourceUrl);
-    Map<String,Object> data = new HashMap<>();
-    data.put("data",downloadedData);
+    Stream<GithubEvent> downloadedData = githubExtractor.extractDataFrom(startTime,endTime);
     BaseCalculator commitMetric = new CommitCalculator();
     BaseCalculator averageMetric = new AverageCommitCalculator();
     BaseCalculator contributorMetric = new NumberContributorCalculator();
     BaseCalculator averageTimeIssues = new AverageTimeIssueOpenCalculator();
     System.out.println("Start Transform : " + new Date());
-    Transformer<Stream<Repository>> git = new GithubTransformer(Arrays.asList(commitMetric,averageMetric,contributorMetric,averageTimeIssues));
-    List<Repository> result =  git.transform(data).collect(Collectors.toList());
+    Transformer<Stream<Repository>,Stream<GithubEvent>> git = new GithubTransformer(Arrays.asList(commitMetric,averageMetric,contributorMetric,averageTimeIssues));
+    List<Repository> result =  git.transform(downloadedData).collect(Collectors.toList());
     System.out.println("End Transform : " + new Date());
     System.out.println(result.size());
     result.forEach(System.out::println);

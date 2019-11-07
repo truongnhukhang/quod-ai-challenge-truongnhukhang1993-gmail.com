@@ -1,15 +1,15 @@
-package ai.quod.challenge.tranfomer.github.domain;
+package ai.quod.challenge.converter;
 
 import ai.quod.challenge.converter.DateTimeConverter;
+import ai.quod.challenge.domain.github.Repository;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
  * This class is use to get data from Map<String,Object> githubEvent
  */
-public class GithubEvent {
+public class GithubEventConverter {
 
   public static final String TYPE = "type";
 
@@ -26,7 +26,7 @@ public class GithubEvent {
     return Long.valueOf((Integer) repo.get("id"));
   }
 
-  public static boolean isIssueEventAndIssueClosed(Map<String,Object> event) {
+  public static boolean isIssueEventAndIssueClosedFrom(Map<String,Object> event) {
     if(!ISSUE_EVENT.equals(event.get(TYPE))) {
       return false;
     }
@@ -48,7 +48,7 @@ public class GithubEvent {
     return (Map<String, Object>) githubEvent.get("payload");
   }
 
-  public static String getActorLogin(Map<String,Object> githubEvent) {
+  public static String getActorLoginFrom(Map<String,Object> githubEvent) {
     Map<String,Object> actor = (Map<String, Object>) githubEvent.get("actor_attributes");
     if(actor==null) {
       actor = (Map<String, Object>) githubEvent.get("actor");
@@ -62,17 +62,22 @@ public class GithubEvent {
     return (Map<String, Object>) pullRequest.get("user");
   }
 
-  public static Integer getCommitSize(Map<String, Object> event) {
+  public static Integer getPullRequestUserId(Map<String,Object> pullRequestEvent) {
+    Map<String,Object> pullRequestUser = getPullRequestUser(pullRequestEvent);
+    return pullRequestUser!=null ? (Integer) pullRequestUser.get("id") : null;
+  }
+
+  public static Integer getCommitSizeFrom(Map<String, Object> event) {
     Map<String, Object> payload = getPayload(event);
     return (Integer) payload.get("size");
   }
 
-  public static LocalDateTime getCommitDate(Map<String,Object> event) {
+  public static LocalDateTime getCommitDateFrom(Map<String,Object> event) {
     String create_at = (String) event.get("created_at");
     return DateTimeConverter.convertStringIS8601ToLocalDateTime(create_at);
   }
 
-  public static Repository getRepository(Map<String, Object> githubEvent) {
+  public static Repository getRepositoryFrom(Map<String, Object> githubEvent) {
     Map<String,Object> repo = (Map<String, Object>) githubEvent.get("repo");
     Long id = 0L;
     String repoOrg = "";

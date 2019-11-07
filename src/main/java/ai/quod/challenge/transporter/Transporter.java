@@ -1,8 +1,6 @@
 package ai.quod.challenge.transporter;
 
-import java.util.Map;
-
-public interface Transporter {
-  void sendTo(Map<String,Object> data);
+public interface Transporter<T> {
+  void sendTo(T data);
 }
 

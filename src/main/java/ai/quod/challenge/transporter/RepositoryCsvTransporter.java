@@ -1,6 +1,6 @@
 package ai.quod.challenge.transporter;
 
-import ai.quod.challenge.tranfomer.github.domain.Repository;
+import ai.quod.challenge.domain.github.Repository;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
@@ -9,22 +9,25 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CsvTransporter implements Transporter {
+public class RepositoryCsvTransporter implements Transporter<Stream<Repository>> {
 
-  private static final Logger LOGGER = Logger.getLogger(CsvTransporter.class.getClass().getName());
+  private static final Logger LOGGER = Logger.getLogger(RepositoryCsvTransporter.class.getClass().getName());
+
+  String[] headers;
+  String filename;
+
+  public RepositoryCsvTransporter(String[] headers, String filename) {
+    this.headers = headers;
+    this.filename = filename;
+  }
 
   @Override
-  public void sendTo(Map<String, Object> data) {
+  public void sendTo(Stream<Repository> projectStream) {
     try {
-      Stream<Repository> projectStream = (Stream<Repository>) data.get("data");
-      String[] headers = (String[]) data.get("headers");
-      String filename = (String) data.get("filename");
       File file = new File(filename);
       if(file.exists()) {
         file.delete();

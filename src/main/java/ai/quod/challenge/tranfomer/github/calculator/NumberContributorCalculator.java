@@ -1,13 +1,14 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
-import ai.quod.challenge.tranfomer.github.domain.Repository;
+import ai.quod.challenge.domain.github.GithubEvent;
+import ai.quod.challenge.domain.github.Repository;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static ai.quod.challenge.tranfomer.github.domain.GithubEvent.*;
+import static ai.quod.challenge.converter.GithubEventConverter.*;
 
 public class NumberContributorCalculator extends BaseCalculator {
 
@@ -21,8 +22,8 @@ public class NumberContributorCalculator extends BaseCalculator {
   }
 
   @Override
-  public void metricCalculate(Map<String, Object> event) {
-    if(PULL_REQUEST_EVENT.equals(event.get(TYPE))) {
+  public void metricCalculate(GithubEvent event) {
+    if(PULL_REQUEST_EVENT.equals(event.getType())) {
       Integer currentNumberContributorOfRepo = updateNumberContributorOfRepo(event);
       updateMaxNumberContributor(currentNumberContributorOfRepo);
     }
@@ -51,15 +52,14 @@ public class NumberContributorCalculator extends BaseCalculator {
     }
   }
 
-  private Integer updateNumberContributorOfRepo(Map<String, Object> event) {
-    Long repository = getRepositoryId(event);
-    Map<String,Object> user = getPullRequestUser(event);
+  private Integer updateNumberContributorOfRepo(GithubEvent event) {
+    Long repository = event.getRepository().getId();
     Map<Long,Set<Integer>> numContributorsOfRepos = (Map<Long, Set<Integer>>) calculateResult.get(NUMBER_CONTRIBUTOR_FOR_EACH_REPO);
     Set<Integer> currentContributors = numContributorsOfRepos.get(repository);
     if(currentContributors==null) {
       currentContributors = new HashSet<>();
     }
-    currentContributors.add((Integer) user.get("id"));
+    currentContributors.add(event.getUserPullRequestId());
     numContributorsOfRepos.put(repository,currentContributors);
     return currentContributors.size();
   }

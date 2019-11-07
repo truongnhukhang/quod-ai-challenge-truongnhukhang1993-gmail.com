@@ -1,4 +1,4 @@
-package ai.quod.challenge.tranfomer.github.domain;
+package ai.quod.challenge.domain.github;
 
 /**
  * Created by truongnhukhang on 11/1/19.

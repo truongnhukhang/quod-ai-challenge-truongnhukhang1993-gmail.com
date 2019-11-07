@@ -2,6 +2,7 @@ package ai.quod.challenge.extractor;
 
 import ai.quod.challenge.converter.DateTimeConverter;
 import ai.quod.challenge.converter.JsonConverter;
+import ai.quod.challenge.domain.github.GithubEvent;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
-public class GithubExtractor implements Extractor<Map<String, Object>> {
+public class GithubExtractor implements Extractor<GithubEvent> {
 
   private static final Logger LOGGER = Logger.getLogger(GithubExtractor.class.getClass().getName());
   private static final String GIT_HUB_URL = "https://data.gharchive.org/";
@@ -31,19 +32,16 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
    * In case , the period between of start time and end time to large ,
    * we have to make that period become a list of smaller period (1 hours). And extract them concurrently.
    *
-   * @param resourceUrl
    * @return
    */
-  public Stream<Map<String, Object>> extractDataFrom(Map<String, Object> resourceUrl) {
-    LocalDateTime startTime = (LocalDateTime) resourceUrl.get("startTime");
-    LocalDateTime endTime = (LocalDateTime) resourceUrl.get("endTime");
+  public Stream<GithubEvent> extractDataFrom(LocalDateTime startTime,LocalDateTime endTime) {
     LOGGER.log(Level.INFO, "Start Extract Data " + startTime + " - " + endTime);
-    Stream<Map<String, Object>> result = Stream.empty();
+    Stream<GithubEvent> result = Stream.empty();
     List<String> urls = DateTimeConverter.buildUrlForEachHour(GIT_HUB_URL, startTime, endTime);
-    List<Callable<Stream<Map<String, Object>>>> worker = assignWorkerForEachUrl(urls);
+    List<Callable<Stream<GithubEvent>>> worker = assignWorkerForEachUrl(urls);
     ExecutorService executorService = Executors.newFixedThreadPool(NUM_DOWNLOAD_THREAD);
     try {
-      List<Future<Stream<Map<String, Object>>>> futures = executorService.invokeAll(worker);
+      List<Future<Stream<GithubEvent>>> futures = executorService.invokeAll(worker);
       for (int i = 0; i < futures.size(); i++) {
         result = Stream.concat(result, futures.get(i).get());
       }
@@ -65,13 +63,13 @@ public class GithubExtractor implements Extractor<Map<String, Object>> {
    * @param urls
    * @return
    */
-  private List<Callable<Stream<Map<String, Object>>>> assignWorkerForEachUrl(List<String> urls) {
-    return urls.stream().map(url -> (Callable<Stream<Map<String, Object>>>) () -> {
+  private List<Callable<Stream<GithubEvent>>> assignWorkerForEachUrl(List<String> urls) {
+    return urls.stream().map(url -> (Callable<Stream<GithubEvent>>) () -> {
       String fileLocation = downloadFile(url);
       if (fileLocation != null) {
         Stream<Map<String, Object>> mapStream = JsonConverter.convertJsonObjectsToStreamFromFile(fileLocation);
         new File(fileLocation).deleteOnExit();
-        return mapStream;
+        return mapStream.map(GithubEvent::new);
       }
       return Stream.empty();
     }).collect(Collectors.toList());

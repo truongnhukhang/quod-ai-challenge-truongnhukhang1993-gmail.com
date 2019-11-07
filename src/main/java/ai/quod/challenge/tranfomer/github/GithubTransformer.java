@@ -1,9 +1,10 @@
 package ai.quod.challenge.tranfomer.github;
 
+import ai.quod.challenge.domain.github.GithubEvent;
 import ai.quod.challenge.tranfomer.Transformer;
 import ai.quod.challenge.tranfomer.github.calculator.BaseCalculator;
-import ai.quod.challenge.tranfomer.github.domain.GithubEvent;
-import ai.quod.challenge.tranfomer.github.domain.Repository;
+import ai.quod.challenge.converter.GithubEventConverter;
+import ai.quod.challenge.domain.github.Repository;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +14,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class GithubTransformer implements Transformer<Stream<Repository>> {
+public class GithubTransformer implements Transformer<Stream<Repository>,Stream<GithubEvent>> {
 
   private List<BaseCalculator> calculateFunctions = null;
 
@@ -26,9 +27,8 @@ public class GithubTransformer implements Transformer<Stream<Repository>> {
   }
 
   @Override
-  public Stream<Repository> transform(Map<String, Object> data) {
-    Stream<Map<String, Object>> githubEvents = (Stream<Map<String, Object>>) data.get("data");
-    githubEvents = githubEvents.parallel().filter(GithubEvent::containRepositoryInfo);
+  public Stream<Repository> transform(Stream<GithubEvent> githubEvents) {
+    githubEvents = githubEvents.parallel().filter(githubEvent -> githubEvent.getRepository()!=null);
     githubEvents = applyMetricCalculatorFor(githubEvents);
     Stream<Repository> repositoryStream = githubEvents.map(GithubEvent::getRepository).distinct().collect(Collectors.toList()).parallelStream();
     repositoryStream = applyHealthScoreCalculatorFor(repositoryStream);
@@ -44,9 +44,9 @@ public class GithubTransformer implements Transformer<Stream<Repository>> {
     return repositoryStream;
   }
 
-  private Stream<Map<String, Object>> applyMetricCalculatorFor(Stream<Map<String, Object>> githubEvents) {
+  private Stream<GithubEvent> applyMetricCalculatorFor(Stream<GithubEvent> githubEvents) {
     for (int i = 0; i < calculateFunctions.size(); i++) {
-      Consumer<Map<String, Object>> metricCalculator = calculateFunctions.get(i);
+      Consumer<GithubEvent> metricCalculator = calculateFunctions.get(i);
       githubEvents = githubEvents.peek(metricCalculator);
     }
     return githubEvents;

@@ -1,13 +1,14 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
-import ai.quod.challenge.tranfomer.github.domain.Repository;
+import ai.quod.challenge.domain.github.GithubEvent;
+import ai.quod.challenge.domain.github.Repository;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static ai.quod.challenge.tranfomer.github.domain.GithubEvent.*;
+import static ai.quod.challenge.converter.GithubEventConverter.*;
 
 /**
  * Created by truongnhukhang on 10/30/19.
@@ -24,8 +25,8 @@ public class RatioCommitPerDevelopersCalculator extends BaseCalculator {
   }
 
   @Override
-  public void metricCalculate(Map<String, Object> event) throws Exception {
-    if(PUSH_EVENT.equals(event.get(TYPE))) {
+  public void metricCalculate(GithubEvent event) throws Exception {
+    if(PUSH_EVENT.equals(event.getType())) {
       Double currentRatioCommitRepo = updateCurrentRatioRepo(event);
       updateMaxRatioCommit(currentRatioCommitRepo);
     }
@@ -37,10 +38,10 @@ public class RatioCommitPerDevelopersCalculator extends BaseCalculator {
     }
   }
 
-  private Double updateCurrentRatioRepo(Map<String, Object> event) {
-    Long repository = getRepositoryId(event);
-    Integer numCommit = getCommitSize(event);
-    String actorLogin = getActorLogin(event);
+  private Double updateCurrentRatioRepo(GithubEvent event) {
+    Long repository = event.getRepository().getId();
+    Integer numCommit = event.getCommitSize();
+    String actorLogin = event.getActorLogin();
     Map<Long,RatioCommitPerDev> ratioCommitRepos = (Map<Long, RatioCommitPerDev>) calculateResult.get(RATIO_COMMIT_PER_DEVELOPER_REPO);
     RatioCommitPerDev ratioCommitInfo = ratioCommitRepos.get(repository);
     if(ratioCommitInfo==null) {

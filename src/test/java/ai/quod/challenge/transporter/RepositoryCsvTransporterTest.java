@@ -1,10 +1,11 @@
 package ai.quod.challenge.transporter;
 
+import ai.quod.challenge.domain.github.GithubEvent;
 import ai.quod.challenge.tranfomer.github.GithubTransformer;
 import ai.quod.challenge.tranfomer.Transformer;
 import ai.quod.challenge.tranfomer.github.calculator.BaseCalculator;
 import ai.quod.challenge.tranfomer.github.calculator.CommitCalculator;
-import ai.quod.challenge.tranfomer.github.domain.Repository;
+import ai.quod.challenge.domain.github.Repository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +17,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CsvTransporterTest {
+public class RepositoryCsvTransporterTest {
 
   String dataTest = "{\"id\":\"2489651045\",\"type\":\"CreateEvent\",\"actor\":{\"id\":665991,\"login\":\"petroav\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/petroav\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/665991?\"},\"repo\":{\"id\":28688495,\"name\":\"petroav/6.828\",\"url\":\"https://api.github.com/repos/petroav/6.828\"},\"payload\":{\"ref\":\"master\",\"ref_type\":\"branch\",\"master_branch\":\"master\",\"description\":\"Solution to homework and assignments from MIT's 6.828 (Operating Systems Engineering). Done in my spare time.\",\"pusher_type\":\"user\"},\"public\":true,\"created_at\":\"2015-01-01T15:00:00Z\"}\n" +
       "{\"id\":\"2489651051\",\"type\":\"PushEvent\",\"actor\":{\"id\":3854017,\"login\":\"rspt\",\"gravatar_id\":\"\",\"url\":\"https://api.github.com/users/rspt\",\"avatar_url\":\"https://avatars.githubusercontent.com/u/3854017?\"},\"repo\":{\"id\":28671719,\"name\":\"rspt/rspt-theme\",\"url\":\"https://api.github.com/repos/rspt/rspt-theme\"},\"payload\":{\"push_id\":536863970,\"size\":1,\"distinct_size\":1,\"ref\":\"refs/heads/master\",\"head\":\"6b089eb4a43f728f0a594388092f480f2ecacfcd\",\"before\":\"437c03652caa0bc4a7554b18d5c0a394c2f3d326\",\"commits\":[{\"sha\":\"6b089eb4a43f728f0a594388092f480f2ecacfcd\",\"author\":{\"email\":\"5c682c2d1ec4073e277f9ba9f4bdf07e5794dabe@rspt.ch\",\"name\":\"rspt\"},\"message\":\"Fix main header height on mobile\",\"distinct\":true,\"url\":\"https://api.github.com/repos/rspt/rspt-theme/commits/6b089eb4a43f728f0a594388092f480f2ecacfcd\"}]},\"public\":true,\"created_at\":\"2015-01-01T15:00:01Z\"}\n" +
@@ -42,17 +43,14 @@ public class CsvTransporterTest {
       }
       return null;
     }).collect(Collectors.toList());
-    Map<String,Object> data = new HashMap<>();
-    data.put("data",dataJson.stream());
     BaseCalculator commitMetric = new CommitCalculator();
     System.out.println("Start Transform : " + new Date());
-    Transformer<Stream<Repository>> git = new GithubTransformer(Arrays.asList(commitMetric));
-    data.put("data",git.transform(data));
-    data.put("filename","heath_score.csv");
-    data.put("headers",new String[]{"org","repo_name","health_score","num_commits"});
-    Transporter csvTransporter = new CsvTransporter();
-    csvTransporter.sendTo(data);
-    File file = new File((String) data.get("filename"));
+    Transformer<Stream<Repository>,Stream<GithubEvent>> git = new GithubTransformer(Arrays.asList(commitMetric));
+    String filename = "heath_score.csv";
+    Transporter<Stream<Repository>> csvTransporter = new RepositoryCsvTransporter(new String[]{"org","repo_name","health_score","num_commits"}
+    , filename);
+    csvTransporter.sendTo(git.transform(dataJson.stream().map(GithubEvent::new)));
+    File file = new File(filename);
     Assertions.assertTrue(file.exists());
   }
 }

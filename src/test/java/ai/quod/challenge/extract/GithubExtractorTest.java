@@ -1,29 +1,24 @@
 package ai.quod.challenge.extract;
 
 import ai.quod.challenge.converter.DateTimeConverter;
+import ai.quod.challenge.domain.github.GithubEvent;
 import ai.quod.challenge.extractor.Extractor;
 import ai.quod.challenge.extractor.GithubExtractor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 public class GithubExtractorTest {
 
   @Test
   public void testDownloadAndExtract()  {
-    Extractor<Map<String,Object>> githubExtractor = new GithubExtractor();
-    Map<String,Object> resourceUrl = new HashMap<>();
+    Extractor<GithubEvent> githubExtractor = new GithubExtractor();
     LocalDateTime startTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2011-02-12T08:00:00Z");
     LocalDateTime endTime = DateTimeConverter.convertStringIS8601ToLocalDateTime("2011-02-12T08:00:00Z");
-    resourceUrl.put("startTime",startTime);
-    resourceUrl.put("endTime",endTime);
-    Stream<Map<String,Object>> downloadedData = githubExtractor.extractDataFrom(resourceUrl);
+    Stream<GithubEvent> downloadedData = githubExtractor.extractDataFrom(startTime,endTime);
     Assertions.assertNotNull(downloadedData);
     System.out.println(downloadedData.count());
 

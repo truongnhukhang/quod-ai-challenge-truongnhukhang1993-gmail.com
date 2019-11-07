@@ -1,15 +1,17 @@
 package ai.quod.challenge.tranfomer.github.calculator;
 
 import ai.quod.challenge.converter.DateTimeConverter;
-import ai.quod.challenge.tranfomer.github.domain.Repository;
+import ai.quod.challenge.domain.github.GithubEvent;
+import ai.quod.challenge.domain.github.Repository;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import static ai.quod.challenge.tranfomer.github.domain.GithubEvent.*;
+
+import static ai.quod.challenge.converter.GithubEventConverter.getIssue;
+import static ai.quod.challenge.converter.GithubEventConverter.getRepositoryId;
+
 /**
  * Created by truongnhukhang on 10/29/19.
  */
@@ -20,19 +22,18 @@ public class AverageTimeIssueOpenCalculator extends BaseCalculator {
 
   @Override
   public void initMetric() {
-    calculateResult.put(MIN_TIME_ISSUE_REMAIN_OPEN,Integer.MAX_VALUE*1.0);
-    calculateResult.put(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO,new HashMap<Long,AverageTimeIssueOpen>());
+    calculateResult.put(MIN_TIME_ISSUE_REMAIN_OPEN, Integer.MAX_VALUE * 1.0);
+    calculateResult.put(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO, new HashMap<Long, AverageTimeIssueOpen>());
   }
 
   @Override
-  public void metricCalculate(Map<String, Object> event) {
-    if(isIssueEventAndIssueClosed(event)) {
-      Map<String,Object> issueInfo = getIssue(event);
-      if(issueInfo!=null) {
-        LocalDateTime issueCreateAt = DateTimeConverter.convertStringIS8601ToLocalDateTime((String) issueInfo.get("created_at"));
-        LocalDateTime issueCloseAt = DateTimeConverter.convertStringIS8601ToLocalDateTime((String) issueInfo.get("closed_at"));
-        Double issueTimeRemainOpen = (issueCloseAt.toEpochSecond(ZoneOffset.UTC)-issueCreateAt.toEpochSecond(ZoneOffset.UTC))*1.0/60/60;
-        updateAverageTimeIssue(issueTimeRemainOpen,event);
+  public void metricCalculate(GithubEvent event) {
+    if (event.isIssueEventAndIssueClosed()) {
+      LocalDateTime issueCreateAt = event.getIssueCreateAt();
+      LocalDateTime issueCloseAt = event.getIssueCloseAt();
+      if(issueCloseAt!=null && issueCreateAt!=null) {
+        Double issueTimeRemainOpen = (issueCloseAt.toEpochSecond(ZoneOffset.UTC) - issueCreateAt.toEpochSecond(ZoneOffset.UTC)) * 1.0 / 60 / 60;
+        updateAverageTimeIssue(issueTimeRemainOpen, event);
         updateMinTimeIssueRemainOpen(issueTimeRemainOpen);
       }
     }
@@ -40,15 +41,15 @@ public class AverageTimeIssueOpenCalculator extends BaseCalculator {
 
   @Override
   public Repository healthScoreCalculate(Repository repository) {
-    Map<Long,AverageTimeIssueOpen> averageTimeIssueOpenRepos = (Map<Long, AverageTimeIssueOpen>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
+    Map<Long, AverageTimeIssueOpen> averageTimeIssueOpenRepos = (Map<Long, AverageTimeIssueOpen>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
     AverageTimeIssueOpen averageTimeIssueInfo = averageTimeIssueOpenRepos.get(repository.getId());
     double currentScore = repository.getHealthScore();
-    if(averageTimeIssueInfo!=null) {
+    if (averageTimeIssueInfo != null) {
       Double averageTime = averageTimeIssueInfo.averageTime;
       repository.setAverageHoursIssueRemainOpen(averageTime);
       Double minTimeIssue = (Double) calculateResult.get(MIN_TIME_ISSUE_REMAIN_OPEN);
-      if(averageTime>0) {
-        repository.setHealthScore(currentScore+minTimeIssue*1.0/averageTime);
+      if (averageTime > 0) {
+        repository.setHealthScore(currentScore + minTimeIssue * 1.0 / averageTime);
       }
     } else {
       repository.setAverageHoursIssueRemainOpen(0.0);
@@ -58,29 +59,29 @@ public class AverageTimeIssueOpenCalculator extends BaseCalculator {
 
   private void updateMinTimeIssueRemainOpen(Double issueTimeRemainOpen) {
     Double minIssue = (Double) calculateResult.get(MIN_TIME_ISSUE_REMAIN_OPEN);
-    if(minIssue.compareTo(issueTimeRemainOpen)>0) {
-      calculateResult.put(MIN_TIME_ISSUE_REMAIN_OPEN,issueTimeRemainOpen);
+    if (minIssue.compareTo(issueTimeRemainOpen) > 0) {
+      calculateResult.put(MIN_TIME_ISSUE_REMAIN_OPEN, issueTimeRemainOpen);
     }
   }
 
-  private void updateAverageTimeIssue(Double issueTimeRemainOpen, Map<String, Object> event) {
-    Map<Long,AverageTimeIssueOpen> averageTimeIssueOpenRepos = (Map<Long, AverageTimeIssueOpen>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
-    Long repository = getRepositoryId(event);
+  private void updateAverageTimeIssue(Double issueTimeRemainOpen, GithubEvent event) {
+    Map<Long, AverageTimeIssueOpen> averageTimeIssueOpenRepos = (Map<Long, AverageTimeIssueOpen>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
+    Long repository = event.getRepository().getId();
     AverageTimeIssueOpen averageTimeIssue = averageTimeIssueOpenRepos.get(repository);
-    if(averageTimeIssue==null) {
+    if (averageTimeIssue == null) {
       averageTimeIssue = new AverageTimeIssueOpen();
-      averageTimeIssue.issues=1;
-      averageTimeIssue.averageTime=issueTimeRemainOpen*1.0;
+      averageTimeIssue.issues = 1;
+      averageTimeIssue.averageTime = issueTimeRemainOpen * 1.0;
       averageTimeIssue.totalTime = issueTimeRemainOpen;
     } else {
-      Integer issues = averageTimeIssue.issues+1;
+      Integer issues = averageTimeIssue.issues + 1;
       Double totalTime = averageTimeIssue.totalTime + issueTimeRemainOpen;
-      Double averageTime = totalTime/issues;
+      Double averageTime = totalTime / issues;
       averageTimeIssue.issues = issues;
       averageTimeIssue.averageTime = averageTime;
       averageTimeIssue.totalTime = totalTime;
     }
-    averageTimeIssueOpenRepos.put(repository,averageTimeIssue);
+    averageTimeIssueOpenRepos.put(repository, averageTimeIssue);
   }
 
   private class AverageTimeIssueOpen {

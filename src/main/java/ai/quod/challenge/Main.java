@@ -1,13 +1,14 @@
 package ai.quod.challenge;
 
 import ai.quod.challenge.converter.DateTimeConverter;
+import ai.quod.challenge.domain.github.GithubEvent;
 import ai.quod.challenge.extractor.Extractor;
 import ai.quod.challenge.extractor.GithubExtractor;
 import ai.quod.challenge.tranfomer.github.GithubTransformer;
 import ai.quod.challenge.tranfomer.Transformer;
 import ai.quod.challenge.tranfomer.github.calculator.*;
-import ai.quod.challenge.tranfomer.github.domain.Repository;
-import ai.quod.challenge.transporter.CsvTransporter;
+import ai.quod.challenge.domain.github.Repository;
+import ai.quod.challenge.transporter.RepositoryCsvTransporter;
 import ai.quod.challenge.transporter.Transporter;
 
 import java.time.LocalDateTime;
@@ -17,7 +18,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Main {
@@ -53,13 +53,9 @@ public class Main {
     if(validate) {
       LocalDateTime startTime = DateTimeConverter.convertStringIS8601ToLocalDateTime(args[0]);
       LocalDateTime endTime = DateTimeConverter.convertStringIS8601ToLocalDateTime(args[1]);
-      Map<String,Object> resourceUrl = new HashMap<>();
-      resourceUrl.put("startTime",startTime);
-      resourceUrl.put("endTime",endTime);
       Date startExtractTime = new Date();
-      Map<String,Object> data = new HashMap<>();
-      Extractor<Map<String,Object>> extractor = new GithubExtractor();
-      data.put("data",extractor.extractDataFrom(resourceUrl));
+      Extractor<GithubEvent> extractor = new GithubExtractor();
+      Stream<GithubEvent> githubEventStream = extractor.extractDataFrom(startTime,endTime);
       Date endExtractTime = new Date();
       Date startTransform = new Date();
       BaseCalculator commitMetric = new CommitCalculator();
@@ -67,12 +63,12 @@ public class Main {
       BaseCalculator numberContributorMetric = new NumberContributorCalculator();
       BaseCalculator averageTimeIssues = new AverageTimeIssueOpenCalculator();
       BaseCalculator ratioCommitPerDev = new RatioCommitPerDevelopersCalculator();
-      Transformer<Stream<Repository>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric, averageTimeIssues, ratioCommitPerDev));
-      data.put("data",git.transform(data));
-      data.put("filename","heath_score.csv");
-      data.put("headers",new String[]{"org","repo_name",Repository.HEALTH_SCORE,"num_commits", Repository.AVERAGE_COMMIT_PUSH_PER_DAY,"num_contributor","average_time_issue_remain_opened(hours)","Ratio_Commit_Per_Dev"});
-      Transporter csvTransporter = new CsvTransporter();
-      csvTransporter.sendTo(data);
+      Transformer<Stream<Repository>,Stream<GithubEvent>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric, averageTimeIssues, ratioCommitPerDev));
+      Stream<Repository> transformResult = git.transform(githubEventStream);
+      String filename = "heath_score.csv";
+      String[] headers = {"org", "repo_name", Repository.HEALTH_SCORE, "num_commits", Repository.AVERAGE_COMMIT_PUSH_PER_DAY, "num_contributor", "average_time_issue_remain_opened(hours)", "Ratio_Commit_Per_Dev"};
+      Transporter<Stream<Repository>> csvTransporter = new RepositoryCsvTransporter(headers,filename);
+      csvTransporter.sendTo(transformResult);
       LOGGER.log(Level.INFO, "Extract Data " + startTime + " - " + endTime + " time : " + (endExtractTime.getTime() - startExtractTime.getTime()) / 1000 + " seconds");
       LOGGER.log(Level.INFO, "Transform and send Data " + startTime + " - " + endTime + " time : " + (System.currentTimeMillis() - startTransform.getTime()) / 1000 + " seconds");
     }
