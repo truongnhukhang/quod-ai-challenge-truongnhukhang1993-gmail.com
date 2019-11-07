@@ -4,7 +4,7 @@ Project helps you evaluate which repository has good health. The health score wa
 
 ## Building
 
-Project is built using http://maven.apache.org/[Apache Maven] .
+Project is built using [maven](http://maven.apache.org/) .
 
 run `mvn clean package` to build . The project was build to 2 file jar , one of them is a fat jar ( include all dependencies ) .
 
@@ -64,10 +64,18 @@ To add a new metric calculator .
     ```
    * healthScoreCalculate(repository) -> we put health score calculator business here. 
    ```java
-   if(PUSH_EVENT.equals(event.get(TYPE))) {
-      Long currentRepoCommit = updateCurrentCommitOfRepository(event);
-      updateMaxNumberCommit(currentRepoCommit);
+    Map<Long,Long> repoCommits = (Map<Long, Long>) calculateResult.get(TOTAL_REPO_COMMIT);
+    Long numberCommitOfProject = repoCommits.get(repository.getId());
+    double currentScore = repository.getHealthScore();
+    if(numberCommitOfProject!=null) {
+      Long maxNumberCommit = (Long) calculateResult.get(MAX_NUMBER_COMMIT);
+      repository.setNumberCommit(numberCommitOfProject);
+      double commit_score = numberCommitOfProject*1.0/maxNumberCommit;
+      repository.setHealthScore(currentScore+commit_score);
+    } else {
+      repository.setNumberCommit(0L);
     }
+    return repository;
     ```
  3. Add Metric to metric list when we init Transformer instance .
    
@@ -77,7 +85,7 @@ To add a new metric calculator .
       BaseCalculator numberContributorMetric = new NumberContributorCalculator();
       BaseCalculator averageTimeIssues = new AverageTimeIssueOpenCalculator();
       BaseCalculator ratioCommitPerDev = new RatioCommitPerDevelopersCalculator();
-      Transformer<Stream<Map<String,Object>>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric, averageTimeIssues, ratioCommitPerDev));
+      Transformer<Stream<Repository>,Stream<GithubEvent>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric, averageTimeIssues, ratioCommitPerDev));
    ```
 ## Technical decisions
 ### what frameworks/libraries did you use? 
