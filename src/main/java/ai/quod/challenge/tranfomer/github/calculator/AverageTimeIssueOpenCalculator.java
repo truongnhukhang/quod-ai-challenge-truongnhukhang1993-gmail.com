@@ -17,13 +17,13 @@ import static ai.quod.challenge.converter.GithubEventConverter.getRepositoryId;
  */
 public class AverageTimeIssueOpenCalculator extends BaseCalculator {
 
-  private static final String MIN_TIME_ISSUE_REMAIN_OPEN = "minTimeOpen";
-  private static final String AVERAGE_TIME_ISSUE_OPEN_EACH_REPO = "averageTimeIssueOpen";
+  private Map<Long, AverageTimeIssueOpen> averageTimeIssueOpenRepos = null;
+  private Double minTimeIssue = null;
 
   @Override
   public void initMetric() {
-    calculateResult.put(MIN_TIME_ISSUE_REMAIN_OPEN, Integer.MAX_VALUE * 1.0);
-    calculateResult.put(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO, new HashMap<Long, AverageTimeIssueOpen>());
+    minTimeIssue = 0.0;
+    averageTimeIssueOpenRepos = new HashMap<>();
   }
 
   @Override
@@ -41,13 +41,11 @@ public class AverageTimeIssueOpenCalculator extends BaseCalculator {
 
   @Override
   public Repository healthScoreCalculate(Repository repository) {
-    Map<Long, AverageTimeIssueOpen> averageTimeIssueOpenRepos = (Map<Long, AverageTimeIssueOpen>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
     AverageTimeIssueOpen averageTimeIssueInfo = averageTimeIssueOpenRepos.get(repository.getId());
     double currentScore = repository.getHealthScore();
     if (averageTimeIssueInfo != null) {
       Double averageTime = averageTimeIssueInfo.averageTime;
       repository.setAverageHoursIssueRemainOpen(averageTime);
-      Double minTimeIssue = (Double) calculateResult.get(MIN_TIME_ISSUE_REMAIN_OPEN);
       if (averageTime > 0) {
         repository.setHealthScore(currentScore + minTimeIssue * 1.0 / averageTime);
       }
@@ -58,14 +56,12 @@ public class AverageTimeIssueOpenCalculator extends BaseCalculator {
   }
 
   private void updateMinTimeIssueRemainOpen(Double issueTimeRemainOpen) {
-    Double minIssue = (Double) calculateResult.get(MIN_TIME_ISSUE_REMAIN_OPEN);
-    if (minIssue.compareTo(issueTimeRemainOpen) > 0) {
-      calculateResult.put(MIN_TIME_ISSUE_REMAIN_OPEN, issueTimeRemainOpen);
+    if (minTimeIssue.compareTo(issueTimeRemainOpen) > 0) {
+      minTimeIssue = issueTimeRemainOpen;
     }
   }
 
   private void updateAverageTimeIssue(Double issueTimeRemainOpen, GithubEvent event) {
-    Map<Long, AverageTimeIssueOpen> averageTimeIssueOpenRepos = (Map<Long, AverageTimeIssueOpen>) calculateResult.get(AVERAGE_TIME_ISSUE_OPEN_EACH_REPO);
     Long repository = event.getRepository().getId();
     AverageTimeIssueOpen averageTimeIssue = averageTimeIssueOpenRepos.get(repository);
     if (averageTimeIssue == null) {

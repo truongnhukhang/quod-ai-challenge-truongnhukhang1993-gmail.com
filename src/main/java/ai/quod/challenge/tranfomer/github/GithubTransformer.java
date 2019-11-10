@@ -20,10 +20,7 @@ public class GithubTransformer implements Transformer<Stream<Repository>,Stream<
 
   public GithubTransformer(List<BaseCalculator> calculateFunctions) {
     this.calculateFunctions = calculateFunctions;
-    calculateFunctions.forEach(baseCalculator -> {
-      baseCalculator.setCalculateResult(new ConcurrentHashMap<>());
-      baseCalculator.initMetric();
-    });
+    calculateFunctions.forEach(BaseCalculator::initMetric);
   }
 
   @Override

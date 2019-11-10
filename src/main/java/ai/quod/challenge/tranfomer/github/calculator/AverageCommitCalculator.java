@@ -5,20 +5,20 @@ import ai.quod.challenge.domain.github.Repository;
 
 import java.time.LocalDate;
 import java.util.HashMap;
-import java.util.Map;
 
-import static ai.quod.challenge.converter.GithubEventConverter.*;
+import static ai.quod.challenge.converter.GithubEventConverter.PUSH_EVENT;
 
 
 public class AverageCommitCalculator extends BaseCalculator {
 
-  private static final String MAX_AVERAGE_COMMIT_PER_DAY = "maxAverage";
-  private static final String AVERAGE_COMMIT_PER_DAY_BY_REPO_ID = "averageCommitRepos";
+  private Double maxAverageCommit = null;
+  private HashMap<Long,AveragePushPerDay> averageCommitPerDayInfoByRepo = null;
+
 
   @Override
   public void initMetric() {
-    calculateResult.put(MAX_AVERAGE_COMMIT_PER_DAY,0.0);
-    calculateResult.put(AVERAGE_COMMIT_PER_DAY_BY_REPO_ID,new HashMap<Long,AveragePushPerDay>());
+    maxAverageCommit = 0.0;
+    averageCommitPerDayInfoByRepo = new HashMap<>();
   }
 
   /**
@@ -36,13 +36,11 @@ public class AverageCommitCalculator extends BaseCalculator {
 
   @Override
   public Repository healthScoreCalculate(Repository repository) {
-    Map<Long,AveragePushPerDay> averageCommitPerDayInfoByRepo = (Map<Long, AveragePushPerDay>) calculateResult.get(AVERAGE_COMMIT_PER_DAY_BY_REPO_ID);
     AveragePushPerDay averagePushPerDayInfo = averageCommitPerDayInfoByRepo.get(repository.getId());
     double currentScore = repository.getHealthScore();
     if(averagePushPerDayInfo!=null) {
       Double averagePushPerDay = averagePushPerDayInfo.currentAveragePush;
       repository.setAveragePushPerDay(averagePushPerDay);
-      Double maxAverageCommit = (Double) calculateResult.get(MAX_AVERAGE_COMMIT_PER_DAY);
       repository.setHealthScore(currentScore+averagePushPerDay*1.0/maxAverageCommit);
     } else {
       repository.setAveragePushPerDay(0.0);
@@ -51,14 +49,12 @@ public class AverageCommitCalculator extends BaseCalculator {
   }
 
   private void updateMaxAverageCommit(Double currentAverageCommitOfRepo) {
-    Double maxAverageCommit = (Double) calculateResult.get(MAX_AVERAGE_COMMIT_PER_DAY);
     if(maxAverageCommit.compareTo(currentAverageCommitOfRepo) < 0) {
-      calculateResult.put(MAX_AVERAGE_COMMIT_PER_DAY,currentAverageCommitOfRepo);
+      maxAverageCommit = currentAverageCommitOfRepo;
     }
   }
 
   private Double updateAverageCommitOfRepo(GithubEvent event) {
-    Map<Long,AveragePushPerDay> averageCommitPerDayInfoByRepo = (Map<Long, AveragePushPerDay>) calculateResult.get(AVERAGE_COMMIT_PER_DAY_BY_REPO_ID);
     Long repository = event.getRepository().getId();
     LocalDate pushDate = event.getCommitDate().toLocalDate();
     Integer numPush = 1;

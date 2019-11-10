@@ -2,20 +2,18 @@ package ai.quod.challenge;
 
 import ai.quod.challenge.converter.DateTimeConverter;
 import ai.quod.challenge.domain.github.GithubEvent;
+import ai.quod.challenge.domain.github.Repository;
 import ai.quod.challenge.extractor.Extractor;
 import ai.quod.challenge.extractor.GithubExtractor;
-import ai.quod.challenge.tranfomer.github.GithubTransformer;
 import ai.quod.challenge.tranfomer.Transformer;
+import ai.quod.challenge.tranfomer.github.GithubTransformer;
 import ai.quod.challenge.tranfomer.github.calculator.*;
-import ai.quod.challenge.domain.github.Repository;
 import ai.quod.challenge.transporter.RepositoryCsvTransporter;
 import ai.quod.challenge.transporter.Transporter;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;

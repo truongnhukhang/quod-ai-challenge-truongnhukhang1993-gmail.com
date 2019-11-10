@@ -15,13 +15,13 @@ import static ai.quod.challenge.converter.GithubEventConverter.*;
  */
 public class RatioCommitPerDevelopersCalculator extends BaseCalculator {
 
-  private static final String MAX_RATIO_COMMIT_PER_DEVELOPER = "maxRatioCommit";
-  private static final String RATIO_COMMIT_PER_DEVELOPER_REPO = "ratioCommitPerDeveloper";
+  private Double maxRatioCommitPerDev = null;
+  private Map<Long,RatioCommitPerDev> ratioCommitRepos = null;
 
   @Override
   public void initMetric() {
-    calculateResult.put(MAX_RATIO_COMMIT_PER_DEVELOPER,0.0);
-    calculateResult.put(RATIO_COMMIT_PER_DEVELOPER_REPO,new HashMap<Long,RatioCommitPerDev>());
+    maxRatioCommitPerDev = 0.0;
+    ratioCommitRepos = new HashMap<>();
   }
 
   @Override
@@ -33,8 +33,8 @@ public class RatioCommitPerDevelopersCalculator extends BaseCalculator {
   }
 
   private void updateMaxRatioCommit(Double currentRatioCommitRepo) {
-    if(currentRatioCommitRepo.compareTo((Double) calculateResult.get(MAX_RATIO_COMMIT_PER_DEVELOPER))>0){
-      calculateResult.put(MAX_RATIO_COMMIT_PER_DEVELOPER,currentRatioCommitRepo);
+    if(currentRatioCommitRepo.compareTo(maxRatioCommitPerDev)>0){
+      maxRatioCommitPerDev = currentRatioCommitRepo;
     }
   }
 
@@ -42,7 +42,6 @@ public class RatioCommitPerDevelopersCalculator extends BaseCalculator {
     Long repository = event.getRepository().getId();
     Integer numCommit = event.getCommitSize();
     String actorLogin = event.getActorLogin();
-    Map<Long,RatioCommitPerDev> ratioCommitRepos = (Map<Long, RatioCommitPerDev>) calculateResult.get(RATIO_COMMIT_PER_DEVELOPER_REPO);
     RatioCommitPerDev ratioCommitInfo = ratioCommitRepos.get(repository);
     if(ratioCommitInfo==null) {
       ratioCommitInfo = new RatioCommitPerDev();
@@ -66,13 +65,11 @@ public class RatioCommitPerDevelopersCalculator extends BaseCalculator {
 
   @Override
   public Repository healthScoreCalculate(Repository repository) throws Exception {
-    Map<Long,RatioCommitPerDev> ratioCommitRepos = (Map<Long, RatioCommitPerDev>) calculateResult.get(RATIO_COMMIT_PER_DEVELOPER_REPO);
     RatioCommitPerDev ratioCommitInfo = ratioCommitRepos.get(repository.getId());
     double currentScore = repository.getHealthScore();
     if(ratioCommitInfo!=null) {
       Double ratioCommitPerDev = ratioCommitInfo.ratioCommitPerDev;
       repository.setRatioCommitPerDev(ratioCommitPerDev);
-      Double maxRatioCommitPerDev = (Double) calculateResult.get(MAX_RATIO_COMMIT_PER_DEVELOPER);
       if(maxRatioCommitPerDev!=0) {
         repository.setHealthScore(currentScore+ratioCommitPerDev/maxRatioCommitPerDev);
       }
