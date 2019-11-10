@@ -52,40 +52,38 @@ To add a new metric calculator .
    * initMetric() -> init metric result default value ( ex : totalCommit , averageCommit for each repository )
    
    ```java
-   calculateResult.put(MAX_NUMBER_COMMIT,(long)0);
-   calculateResult.put(TOTAL_REPO_COMMIT,new HashMap<Long,Long>());
+   maxNumberCommit = 0L;
+   totalRepoCommit = new HashMap<>();
    ```
    * metricCalculate(event) -> we put metric calculator business  (ex : count commit , contributor , find maxNumberCommit ...)  here. 
    ```java
-   if(PUSH_EVENT.equals(event.get(TYPE))) {
-      Long currentRepoCommit = updateCurrentCommitOfRepository(event);
-      updateMaxNumberCommit(currentRepoCommit);
-    }
+   if(PUSH_EVENT.equals(event.getType())) {
+     Long currentRepoCommit = updateCurrentCommitOfRepository(event);
+     updateMaxNumberCommit(currentRepoCommit);
+   }
     ```
    * healthScoreCalculate(repository) -> we put health score calculator business here. 
    ```java
-    Map<Long,Long> repoCommits = (Map<Long, Long>) calculateResult.get(TOTAL_REPO_COMMIT);
-    Long numberCommitOfProject = repoCommits.get(repository.getId());
-    double currentScore = repository.getHealthScore();
-    if(numberCommitOfProject!=null) {
-      Long maxNumberCommit = (Long) calculateResult.get(MAX_NUMBER_COMMIT);
-      repository.setNumberCommit(numberCommitOfProject);
-      double commit_score = numberCommitOfProject*1.0/maxNumberCommit;
-      repository.setHealthScore(currentScore+commit_score);
-    } else {
-      repository.setNumberCommit(0L);
-    }
-    return repository;
+   Long numberCommitOfProject = totalRepoCommit.get(repository.getId());
+   double currentScore = repository.getHealthScore();
+   if(numberCommitOfProject!=null) {
+     repository.setNumberCommit(numberCommitOfProject);
+     double commit_score = numberCommitOfProject*1.0/maxNumberCommit;
+     repository.setHealthScore(currentScore+commit_score);
+   } else {
+     repository.setNumberCommit(0L);
+   }
+   return repository;
     ```
  3. Add Metric to metric list when we init Transformer instance .
    
    ```java
-      BaseCalculator commitMetric = new CommitCalculator();
-      BaseCalculator averageCommitPerDayMetric = new AverageCommitCalculator();
-      BaseCalculator numberContributorMetric = new NumberContributorCalculator();
-      BaseCalculator averageTimeIssues = new AverageTimeIssueOpenCalculator();
-      BaseCalculator ratioCommitPerDev = new RatioCommitPerDevelopersCalculator();
-      Transformer<Stream<Repository>,Stream<GithubEvent>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric, averageTimeIssues, ratioCommitPerDev));
+   BaseCalculator commitMetric = new CommitCalculator();
+   BaseCalculator averageCommitPerDayMetric = new AverageCommitCalculator();
+   BaseCalculator numberContributorMetric = new NumberContributorCalculator();
+   BaseCalculator averageTimeIssues = new AverageTimeIssueOpenCalculator();
+   BaseCalculator ratioCommitPerDev = new RatioCommitPerDevelopersCalculator();
+   Transformer<Stream<Repository>,Stream<GithubEvent>> git = new GithubTransformer(Arrays.asList(commitMetric,averageCommitPerDayMetric,numberContributorMetric, averageTimeIssues, ratioCommitPerDev));
    ```
 ## Technical decisions
 ### what frameworks/libraries did you use? 
